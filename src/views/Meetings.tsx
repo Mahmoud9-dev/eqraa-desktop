@@ -1,8 +1,6 @@
-'use client';
-
 import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
-import { getSupabase } from "@/integrations/supabase/client";
+import { getMeetings, addMeeting, updateMeetingStatus, deleteMeeting as deleteMeetingRepo } from "@/lib/database/repositories/meetings";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +25,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDateTime } from "@/lib/i18n";
 
-interface Meeting {
+interface MeetingItem {
   id: string;
   title: string;
   description: string;
@@ -38,7 +36,7 @@ interface Meeting {
 }
 
 const Meetings = () => {
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [meetings, setMeetings] = useState<MeetingItem[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [meetingDate, setMeetingDate] = useState("");
@@ -47,12 +45,11 @@ const Meetings = () => {
   >("المعلمين");
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<MeetingItem | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
   const { toast } = useToast();
   const { t, tFunc, languageMeta } = useLanguage();
 
-  // Label maps: DB Arabic values -> translated display labels
   const statusLabelMap: Record<string, string> = {
     "مجدولة": t.meetings.statusLabels.scheduled,
     "مكتملة": t.meetings.statusLabels.completed,
@@ -66,18 +63,15 @@ const Meetings = () => {
   };
 
   const loadMeetings = async () => {
-    const { data, error } = await getSupabase()
-      .from("meetings")
-      .select("*")
-      .order("meeting_date", { ascending: false });
-
-    if (!error) {
-      setMeetings((data as Meeting[]) || []);
+    try {
+      const data = await getMeetings();
+      setMeetings(data as MeetingItem[]);
+    } catch {
+      // silently handle
     }
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMeetings();
   }, []);
 
@@ -86,68 +80,58 @@ const Meetings = () => {
     if (!title || !description || !meetingDate) return;
 
     setIsLoading(true);
-    const { error } = await getSupabase().from("meetings").insert([
-      {
+    try {
+      await addMeeting({
         title,
         description,
         meeting_date: new Date(meetingDate).toISOString(),
         status: "مجدولة",
         type: meetingType,
-      },
-    ]);
-
-    if (error) {
-      toast({ title: t.meetings.toast.addError, variant: "destructive" });
-    } else {
+      });
       toast({ title: t.meetings.toast.addSuccess });
       setTitle("");
       setDescription("");
       setMeetingDate("");
       setMeetingType("المعلمين");
       loadMeetings();
+    } catch {
+      toast({ title: t.meetings.toast.addError, variant: "destructive" });
     }
     setIsLoading(false);
   };
 
-  const updateStatus = async (
+  const handleUpdateStatus = async (
     id: string,
     newStatus: "مجدولة" | "مكتملة" | "ملغاة"
   ) => {
-    const { error } = await getSupabase()
-      .from("meetings")
-      .update({ status: newStatus })
-      .eq("id", id);
-
-    if (!error) {
+    try {
+      await updateMeetingStatus(id, newStatus);
       toast({ title: t.meetings.toast.statusUpdated });
       loadMeetings();
+    } catch {
+      // silently handle
     }
   };
 
-  const deleteMeeting = async () => {
+  const handleDeleteMeeting = async () => {
     if (!selectedMeeting) return;
 
-    const { error } = await getSupabase()
-      .from("meetings")
-      .delete()
-      .eq("id", selectedMeeting.id);
-
-    if (error) {
-      toast({ title: t.meetings.toast.deleteError, variant: "destructive" });
-    } else {
+    try {
+      await deleteMeetingRepo(selectedMeeting.id);
       toast({ title: t.meetings.toast.deleteSuccess });
       loadMeetings();
+    } catch {
+      toast({ title: t.meetings.toast.deleteError, variant: "destructive" });
     }
     setIsDeleteDialogOpen(false);
     setSelectedMeeting(null);
   };
 
-  const openDeleteDialog = (meeting: Meeting) => {
+  const openDeleteDialog = (meeting: MeetingItem) => {
     setSelectedMeeting(meeting);
     setIsDeleteDialogOpen(true);
   };
 
-  // Filter meetings based on selected type
   const filteredMeetings =
     filterType === "all"
       ? meetings
@@ -379,7 +363,7 @@ const Meetings = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateStatus(meeting.id, "مجدولة")}
+                        onClick={() => handleUpdateStatus(meeting.id, "مجدولة")}
                         className="text-xs sm:text-sm"
                       >
                         {t.meetings.statusLabels.scheduled}
@@ -387,7 +371,7 @@ const Meetings = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateStatus(meeting.id, "مكتملة")}
+                        onClick={() => handleUpdateStatus(meeting.id, "مكتملة")}
                         className="text-xs sm:text-sm"
                       >
                         {t.meetings.statusLabels.completed}
@@ -395,7 +379,7 @@ const Meetings = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateStatus(meeting.id, "ملغاة")}
+                        onClick={() => handleUpdateStatus(meeting.id, "ملغاة")}
                         className="text-xs sm:text-sm"
                       >
                         {t.meetings.statusLabels.cancelled}
@@ -417,7 +401,6 @@ const Meetings = () => {
         </div>
       </main>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[425px]">
           <DialogHeader>
@@ -438,7 +421,7 @@ const Meetings = () => {
             </Button>
             <Button
               variant="destructive"
-              onClick={deleteMeeting}
+              onClick={handleDeleteMeeting}
               className="text-sm"
             >
               {t.meetings.deleteDialog.confirm}

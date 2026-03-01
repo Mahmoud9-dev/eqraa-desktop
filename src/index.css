@@ -113,7 +113,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-arabic;
-    direction: rtl;
+    direction: inherit;
     /* Improve text rendering on mobile */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

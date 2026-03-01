@@ -1,8 +1,9 @@
-'use client';
 
 import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
-import { getSupabase } from "@/integrations/supabase/client";
+import { getStudentsByDept, addStudent } from "@/lib/database/repositories/students";
+import { getTeachersByDept, addTeacher } from "@/lib/database/repositories/teachers";
+import { getQuranSessions, addQuranSession } from "@/lib/database/repositories/quran-sessions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ interface Student {
   parts_memorized: number;
   current_progress: string;
   teacher_id: string | null;
-  teachers?: { name: string };
+  teacher_name: string | null;
 }
 
 interface QuranSession {
@@ -50,7 +51,7 @@ interface QuranSession {
   verses_to: number;
   performance_rating: number;
   session_date: string;
-  students: { name: string };
+  student_name: string | null;
 }
 
 const Quran = () => {
@@ -76,26 +77,18 @@ const Quran = () => {
   const { t, tFunc, languageMeta } = useLanguage();
 
   const loadData = async () => {
-    const { data: studentsData } = await getSupabase()
-      .from("students")
-      .select("*, teachers(name)")
-      .eq("department", "quran")
-      .order("name");
-
-    const { data: teachersData } = await getSupabase()
-      .from("teachers")
-      .select("*")
-      .eq("department", "quran")
-      .order("name");
-
-    const { data: sessionsData } = await getSupabase()
-      .from("quran_sessions")
-      .select("*, students(name)")
-      .order("session_date", { ascending: false });
-
-    if (studentsData) setStudents(studentsData as Student[]);
-    if (teachersData) setTeachers(teachersData as Teacher[]);
-    if (sessionsData) setSessions(sessionsData as QuranSession[]);
+    try {
+      const [studentsData, teachersData, sessionsData] = await Promise.all([
+        getStudentsByDept("quran"),
+        getTeachersByDept("quran"),
+        getQuranSessions(),
+      ]);
+      setStudents(studentsData as Student[]);
+      setTeachers(teachersData as Teacher[]);
+      setSessions(sessionsData as QuranSession[]);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    }
   };
 
   useEffect(() => {
@@ -112,26 +105,25 @@ const Quran = () => {
     let teacherId = selectedTeacher;
 
     if (!teacherId && teacherSearchValue.trim()) {
-      const { data: newTeacher, error: teacherError } = await getSupabase()
-        .from("teachers")
-        .insert([
-          {
-            name: teacherSearchValue.trim(),
-            department: "quran",
-            specialization: "تحفيظ القرآن",
-          },
-        ])
-        .select()
-        .single();
-
-      if (teacherError) {
+      try {
+        await addTeacher({
+          name: teacherSearchValue.trim(),
+          department: "quran",
+          specialization: "تحفيظ القرآن",
+        });
+        toast({ title: t.quran.toast.teacherAdded });
+        // Re-fetch teachers to get the newly created teacher's id
+        const updatedTeachers = await getTeachersByDept("quran");
+        setTeachers(updatedTeachers as Teacher[]);
+        const newTeacher = updatedTeachers.find(
+          (t) => t.name === teacherSearchValue.trim()
+        );
+        teacherId = newTeacher?.id ?? "";
+      } catch {
         toast({ title: t.quran.toast.teacherAddError, variant: "destructive" });
         setIsLoading(false);
         return;
       }
-
-      teacherId = newTeacher.id;
-      toast({ title: t.quran.toast.teacherAdded });
     }
 
     if (!teacherId) {
@@ -140,8 +132,8 @@ const Quran = () => {
       return;
     }
 
-    const { error } = await getSupabase().from("students").insert([
-      {
+    try {
+      await addStudent({
         name: studentName,
         age: parseInt(studentAge),
         grade: "تحفيظ",
@@ -150,18 +142,15 @@ const Quran = () => {
         parts_memorized: 0,
         current_progress: "بداية الحفظ",
         previous_progress: "",
-      },
-    ]);
-
-    if (error) {
-      toast({ title: t.quran.toast.studentAddError, variant: "destructive" });
-    } else {
+      });
       toast({ title: t.quran.toast.studentAdded });
       setStudentName("");
       setStudentAge("");
       setSelectedTeacher("");
       setTeacherSearchValue("");
       loadData();
+    } catch {
+      toast({ title: t.quran.toast.studentAddError, variant: "destructive" });
     }
     setIsLoading(false);
   };
@@ -171,25 +160,22 @@ const Quran = () => {
     if (!selectedStudent || !surahName || !versesFrom || !versesTo) return;
 
     setIsLoading(true);
-    const { error } = await getSupabase().from("quran_sessions").insert([
-      {
+    try {
+      await addQuranSession({
         student_id: selectedStudent,
         surah_name: surahName,
         verses_from: parseInt(versesFrom),
         verses_to: parseInt(versesTo),
         performance_rating: parseInt(rating),
-      },
-    ]);
-
-    if (error) {
-      toast({ title: t.quran.toast.sessionAddError, variant: "destructive" });
-    } else {
+      });
       toast({ title: t.quran.toast.sessionAdded });
       setSurahName("");
       setVersesFrom("");
       setVersesTo("");
       setRating("5");
       loadData();
+    } catch {
+      toast({ title: t.quran.toast.sessionAddError, variant: "destructive" });
     }
     setIsLoading(false);
   };
@@ -372,7 +358,7 @@ const Quran = () => {
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-bold text-lg">
-                            {session.students.name}
+                            {session.student_name}
                           </h4>
                           <span className="text-sm bg-primary/10 px-3 py-1 rounded-full">
                             {session.performance_rating}/10
@@ -548,9 +534,9 @@ const Quran = () => {
                               <p className="text-sm text-muted-foreground">
                                 {tFunc('quran.studentList.age', { age: student.age })}
                               </p>
-                              {student.teachers && (
+                              {student.teacher_name && (
                                 <p className="text-sm text-primary font-medium mt-1">
-                                  {tFunc('quran.studentList.teacher', { name: student.teachers.name })}
+                                  {tFunc('quran.studentList.teacher', { name: student.teacher_name })}
                                 </p>
                               )}
                             </div>

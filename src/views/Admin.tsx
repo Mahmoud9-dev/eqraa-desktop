@@ -1,8 +1,8 @@
-'use client';
 
 import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
-import { getSupabase } from "@/integrations/supabase/client";
+import { getTeachers, addTeacher, type Teacher } from "@/lib/database/repositories/teachers";
+import { getStudents, type Student } from "@/lib/database/repositories/students";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,23 +17,6 @@ import {
 } from "@/components/ui/select";
 import { teacherSchema } from "@/lib/validations";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-interface Teacher {
-  id: string;
-  name: string;
-  specialization: string;
-  department: string;
-  email?: string;
-  phone?: string;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  age: number;
-  department: string;
-  parts_memorized: number;
-}
 
 const Admin = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -50,18 +33,20 @@ const Admin = () => {
   const { t } = useLanguage();
 
   const loadData = async () => {
-    const { data: teachersData } = await getSupabase()
-      .from("teachers")
-      .select("*")
-      .order("name");
-
-    const { data: studentsData } = await getSupabase()
-      .from("students")
-      .select("*")
-      .order("name");
-
-    if (teachersData) setTeachers(teachersData as Teacher[]);
-    if (studentsData) setStudents(studentsData as Student[]);
+    try {
+      const [teachersData, studentsData] = await Promise.all([
+        getTeachers(),
+        getStudents(),
+      ]);
+      setTeachers(teachersData);
+      setStudents(studentsData);
+    } catch (err) {
+      toast({
+        title: t.admin.toast.validationError,
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -92,29 +77,26 @@ const Admin = () => {
     }
 
     setIsLoading(true);
-    const { error } = await getSupabase().from("teachers").insert([
-      {
+    try {
+      await addTeacher({
         name: validation.data.name,
         specialization: validation.data.specialization,
         department: validation.data.department,
-        email: validation.data.email || null,
-        phone: validation.data.phone || null,
-      },
-    ]);
-
-    if (error) {
-      toast({
-        title: t.admin.toast.addTeacherError,
-        description: error.message,
-        variant: "destructive",
+        email: validation.data.email || undefined,
+        phone: validation.data.phone || undefined,
       });
-    } else {
       toast({ title: t.admin.toast.addTeacherSuccess });
       setTeacherName("");
       setSpecialization("");
       setEmail("");
       setPhone("");
       loadData();
+    } catch (err) {
+      toast({
+        title: t.admin.toast.addTeacherError,
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
     }
     setIsLoading(false);
   };

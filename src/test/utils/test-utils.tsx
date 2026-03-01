@@ -1,78 +1,47 @@
 import { render, RenderOptions } from "@testing-library/react";
 import { ReactElement, ReactNode } from "react";
 import { vi, expect } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 
-// Create a test query client
-const createTestQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: 0,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
-
 // Test providers wrapper
 interface AllTheProvidersProps {
   children: ReactNode;
-  queryClient?: QueryClient;
 }
 
-const AllTheProviders = ({
-  children,
-  queryClient = createTestQueryClient(),
-}: AllTheProvidersProps) => {
+const AllTheProviders = ({ children }: AllTheProvidersProps) => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="light"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <TooltipProvider>
-          <BrowserRouter>
-            {children}
-            <Toaster />
-            <Sonner />
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="light"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <TooltipProvider>
+        <BrowserRouter>
+          {children}
+          <Toaster />
+          <Sonner />
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 };
 
 // Custom render function with providers
 const customRender = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper"> & { queryClient?: QueryClient }
+  options?: Omit<RenderOptions, "wrapper">
 ) => {
-  const { queryClient, ...renderOptions } = options || {};
-
   return render(ui, {
     wrapper: ({ children }) => (
-      <AllTheProviders queryClient={queryClient}>{children}</AllTheProviders>
+      <AllTheProviders>{children}</AllTheProviders>
     ),
-    ...renderOptions,
+    ...options,
   });
-};
-
-// Mock user for testing
-export const mockUser = {
-  id: "test-user-id",
-  email: "test@example.com",
-  role: "admin" as const,
-  user_metadata: { role: "admin" },
 };
 
 // Helper functions for testing
@@ -132,8 +101,6 @@ export const submitForm = (form: HTMLElement) => {
 
 // Accessibility testing helpers
 export const checkAccessibility = async (container: HTMLElement) => {
-  // This would integrate with axe-core for accessibility testing
-  // For now, we'll just check basic accessibility requirements
   const buttons = container.querySelectorAll("button");
   buttons.forEach((button) => {
     if (!button.getAttribute("aria-label") && !button.textContent?.trim()) {

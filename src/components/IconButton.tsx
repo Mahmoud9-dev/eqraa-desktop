@@ -1,6 +1,4 @@
-'use client';
-
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -40,7 +38,6 @@ const IconButton = ({
     <div
       className={cn(baseClasses, disabledClasses, loadingClasses, className)}
     >
-      {/* Circular Icon Container */}
       <div
         className={cn(
           'mb-3 sm:mb-4 h-16 w-16 sm:h-20 sm:w-20 flex items-center justify-center rounded-full transition-all duration-300 group-hover:scale-105',
@@ -59,16 +56,14 @@ const IconButton = ({
         )}
       </div>
 
-      {/* Label */}
       <h3 className="text-sm sm:text-base lg:text-lg font-bold text-foreground text-center group-hover:text-primary transition-colors duration-300">
         {label}
       </h3>
     </div>
   );
 
-  // If it's a link (either to or href is provided)
   if (to || href) {
-    const linkHref = to || href || '/';
+    const linkTo = to || href || '/';
 
     if (disabled) {
       return (
@@ -80,7 +75,7 @@ const IconButton = ({
 
     return (
       <Link
-        href={linkHref}
+        to={linkTo}
         aria-label={ariaLabel || label}
         aria-busy={loading}
       >
@@ -89,7 +84,6 @@ const IconButton = ({
     );
   }
 
-  // If it's a button
   return (
     <button
       onClick={onClick}

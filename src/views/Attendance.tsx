@@ -1,4 +1,3 @@
-'use client';
 
 import { useState, useEffect, useCallback } from "react";
 import PageHeader from "@/components/PageHeader";
@@ -33,13 +32,15 @@ import {
 import { CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { getSupabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-
-// Supabase types
-type DbStudent = Tables<"students">;
-type DbTeacher = Tables<"teachers">;
-type DbAttendanceRecord = Tables<"attendance_records">;
+import { getStudents as fetchStudents } from "@/lib/database/repositories/students";
+import { getTeachers as fetchTeachers } from "@/lib/database/repositories/teachers";
+import {
+  getAttendanceRecords as fetchAttendanceRecords,
+  insertAttendanceRecords,
+} from "@/lib/database/repositories/attendance";
+import type { Student as DbStudent } from "@/lib/database/repositories/students";
+import type { Teacher as DbTeacher } from "@/lib/database/repositories/teachers";
+import type { AttendanceRecord as DbAttendanceRecord } from "@/lib/database/repositories/attendance";
 
 interface Student {
   id: string;
@@ -59,7 +60,7 @@ interface Student {
   parentPhone?: string;
   parent_phone?: string | null;
   isActive?: boolean;
-  is_active?: boolean | null;
+  is_active?: number | boolean | null;
 }
 
 interface Teacher {
@@ -68,7 +69,7 @@ interface Teacher {
   specialization: string;
   department: string;
   isActive?: boolean;
-  is_active?: boolean | null;
+  is_active?: number | boolean | null;
 }
 
 interface AttendanceRecord {
@@ -121,86 +122,53 @@ const Attendance = () => {
   // date-fns locale based on current language
   const dateLocale = language === 'ar' ? ar : undefined;
 
-  // Load students from Supabase
+  // Load students from SQLite
   const loadStudents = useCallback(async () => {
     try {
-      const { data, error } = await getSupabase()
-        .from("students")
-        .select("*")
-        .eq("is_active", true)
-        .order("name");
-
-      if (error) {
-        console.error("Error loading students:", error);
-        return;
-      }
-
-      if (data) {
-        const transformedStudents: Student[] = data.map((s) => ({
-          ...s,
-          teacherId: s.teacher_id || "",
-          partsMemorized: s.parts_memorized ?? 0,
-          currentProgress: s.current_progress || "",
-          parentName: s.parent_name || "",
-          parentPhone: s.parent_phone || "",
-          isActive: s.is_active ?? true,
-        }));
-        setStudents(transformedStudents);
-      }
+      const allStudents = await fetchStudents();
+      const activeStudents = allStudents.filter((s) => s.is_active === 1);
+      const transformedStudents: Student[] = activeStudents.map((s) => ({
+        ...s,
+        teacherId: s.teacher_id || "",
+        partsMemorized: s.parts_memorized ?? 0,
+        currentProgress: s.current_progress || "",
+        parentName: s.parent_name || "",
+        parentPhone: s.parent_phone || "",
+        isActive: s.is_active === 1,
+      }));
+      setStudents(transformedStudents);
     } catch (error) {
       console.error("Error loading students:", error);
     }
   }, []);
 
-  // Load teachers from Supabase
+  // Load teachers from SQLite
   const loadTeachers = useCallback(async () => {
     try {
-      const { data, error } = await getSupabase()
-        .from("teachers")
-        .select("*")
-        .eq("is_active", true)
-        .order("name");
-
-      if (error) {
-        console.error("Error loading teachers:", error);
-        return;
-      }
-
-      if (data) {
-        const transformedTeachers: Teacher[] = data.map((t) => ({
-          ...t,
-          isActive: t.is_active ?? true,
-        }));
-        setTeachers(transformedTeachers);
-      }
+      const allTeachers = await fetchTeachers();
+      const activeTeachers = allTeachers.filter((t) => t.is_active === 1);
+      const transformedTeachers: Teacher[] = activeTeachers.map((t) => ({
+        ...t,
+        isActive: t.is_active === 1,
+      }));
+      setTeachers(transformedTeachers);
     } catch (error) {
       console.error("Error loading teachers:", error);
     }
   }, []);
 
-  // Load attendance records from Supabase
+  // Load attendance records from SQLite
   const loadAttendanceRecords = useCallback(async () => {
     try {
-      const { data, error } = await getSupabase()
-        .from("attendance_records")
-        .select("*")
-        .order("record_date", { ascending: false });
-
-      if (error) {
-        console.error("Error loading attendance records:", error);
-        return;
-      }
-
-      if (data) {
-        const transformedRecords: AttendanceRecord[] = data.map((r) => ({
-          ...r,
-          studentId: r.student_id || "",
-          teacherId: r.teacher_id || "",
-          date: r.record_date,
-          status: r.status as "حاضر" | "غائب" | "مأذون",
-        }));
-        setAttendanceRecords(transformedRecords);
-      }
+      const records = await fetchAttendanceRecords();
+      const transformedRecords: AttendanceRecord[] = records.map((r) => ({
+        ...r,
+        studentId: r.student_id || "",
+        teacherId: r.teacher_id || "",
+        date: r.record_date,
+        status: r.status as "حاضر" | "غائب" | "مأذون",
+      }));
+      setAttendanceRecords(transformedRecords);
     } catch (error) {
       console.error("Error loading attendance records:", error);
     }
@@ -269,20 +237,7 @@ const Attendance = () => {
         }
       );
 
-      const { error } = await getSupabase()
-        .from("attendance_records")
-        .insert(recordsToInsert);
-
-      if (error) {
-        console.error("Error recording attendance:", error);
-        toast({
-          title: t.attendance.toast.error,
-          description: t.attendance.toast.recordError,
-          variant: "destructive",
-        });
-        setIsRecording(false);
-        return;
-      }
+      await insertAttendanceRecords(recordsToInsert);
 
       // Reload attendance records
       await loadAttendanceRecords();
@@ -348,20 +303,7 @@ const Attendance = () => {
         }
       );
 
-      const { error } = await getSupabase()
-        .from("attendance_records")
-        .insert(recordsToInsert);
-
-      if (error) {
-        console.error("Error recording teacher attendance:", error);
-        toast({
-          title: t.attendance.toast.error,
-          description: t.attendance.toast.recordError,
-          variant: "destructive",
-        });
-        setIsRecording(false);
-        return;
-      }
+      await insertAttendanceRecords(recordsToInsert);
 
       // Reload attendance records
       await loadAttendanceRecords();

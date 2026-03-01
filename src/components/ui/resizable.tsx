@@ -1,4 +1,3 @@
-'use client';
 
 import { GripVertical } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";

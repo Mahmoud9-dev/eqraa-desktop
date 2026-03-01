@@ -1,8 +1,6 @@
-'use client';
-
 import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
-import { getSupabase } from "@/integrations/supabase/client";
+import { getTajweedLessons, addTajweedLesson, type TajweedLesson } from "@/lib/database/repositories/tajweed";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,17 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDate } from "@/lib/i18n";
-
-interface TajweedLesson {
-  id: string;
-  topic: string;
-  description: string;
-  lesson_date: string | null;
-  teacher_id?: string | null;
-  attendees?: string[] | null;
-  resources?: string[] | null;
-  created_at?: string | null;
-}
 
 const Tajweed = () => {
   const [lessons, setLessons] = useState<TajweedLesson[]>([]);
@@ -31,18 +18,15 @@ const Tajweed = () => {
   const { t, languageMeta } = useLanguage();
 
   const loadLessons = async () => {
-    const { data, error } = await getSupabase()
-      .from("tajweed_lessons")
-      .select("*")
-      .order("lesson_date", { ascending: false });
-
-    if (!error) {
-      setLessons(data || []);
+    try {
+      const data = await getTajweedLessons();
+      setLessons(data);
+    } catch {
+      // silently handle
     }
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadLessons();
   }, []);
 
@@ -51,17 +35,14 @@ const Tajweed = () => {
     if (!topic || !description) return;
 
     setIsLoading(true);
-    const { error } = await getSupabase().from("tajweed_lessons").insert([
-      { topic, description },
-    ]);
-
-    if (error) {
-      toast({ title: t.tajweed.toast.addLessonError, variant: "destructive" });
-    } else {
+    try {
+      await addTajweedLesson({ topic, description });
       toast({ title: t.tajweed.toast.addLessonSuccess });
       setTopic("");
       setDescription("");
       loadLessons();
+    } catch {
+      toast({ title: t.tajweed.toast.addLessonError, variant: "destructive" });
     }
     setIsLoading(false);
   };

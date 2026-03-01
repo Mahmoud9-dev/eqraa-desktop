@@ -198,22 +198,42 @@ Create and present the `[Product Roadmap]` to the user using this strict Markdow
 
 ---
 
-## 8. Project-Specific Architecture Notes (Eqraa Center Hub)
+## 8. Project-Specific Architecture Notes (Eqraa Desktop)
+
+### Technology Stack
+- **Tauri 2.0** — Desktop shell (native WebView, Rust backend)
+- **Vite** — Bundler and dev server
+- **React + React Router** — Client-side SPA routing
+- **SQLite** — Local embedded database via `tauri-plugin-sql`
+- **next-themes** — Theme management (works outside Next.js)
+- **Single admin user** — No authentication, no login, no role system
+
+### Database Layer
+- `src/lib/database/db.ts` — SQLite initialization, migration, `getDb()` singleton
+- `src/lib/database/backup.ts` — Import/export database via Tauri dialog + fs plugins
+- `src/lib/database/repositories/*.ts` — One file per table, async CRUD functions
+- DB values use Arabic canonical strings (e.g., status "حاضر", priority "عالي")
+- Boolean fields use INTEGER (0/1), not boolean
+- UUID generated in JS via `crypto.randomUUID()` before insert
+- Arrays/JSON stored as TEXT (JSON.stringify/parse)
+
+### Tauri Configuration
+- `src-tauri/tauri.conf.json` — App config, window settings, SQL plugin preload
+- `src-tauri/capabilities/default.json` — Permissions for SQL, dialog, fs plugins
+- `src-tauri/src/lib.rs` — Plugin initialization (sql, dialog, fs)
 
 ### Internationalization (i18n)
 
 This project uses a **custom i18n system** (no next-intl / i18next).
 
 **Key files:**
-- `src/lib/i18n/` — All translation data, split by domain (`common.ts`, `nav.ts`, `auth.ts`, `students.ts`, etc.)
+- `src/lib/i18n/` — All translation data, split by domain (`common.ts`, `nav.ts`, `students.ts`, etc.)
 - `src/lib/i18n/index.ts` — Assembles all domains; canonical import path
 - `src/lib/i18n/formatters.ts` — Locale-aware `Intl` formatters
 - `src/contexts/LanguageContext.tsx` — Provider with `useLanguage()` hook
-- `docs/LOCALIZATION_STANDARD.md` — Full standard / key naming rules
 
 **Usage in components:**
 ```tsx
-'use client';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const { t, tFunc, languageMeta, isRTL } = useLanguage();
@@ -225,7 +245,6 @@ const { t, tFunc, languageMeta, isRTL } = useLanguage();
 - Never add hardcoded Arabic strings in JSX — always use `t.*` or `tFunc()`
 - Use Tailwind **logical properties** (`ms-/me-`, `ps-/pe-`, `start-/end-`) not physical (`ml-/mr-`, `pl-/pr-`, `left-/right-`)
 - DB canonical values stay Arabic; only display labels are translated
-- Run `node scripts/check-i18n.js --strict` to audit for unextracted strings
 
 ### Languages
 - `ar` (Arabic, RTL, locale `ar-SA`) — default

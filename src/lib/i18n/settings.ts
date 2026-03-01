@@ -160,6 +160,14 @@ export interface SettingsTranslations {
     profileUpdatedDescription: string;
     error: string;
     requiredFields: string;
+    backupSuccess: string;
+    backupSuccessDescription: string;
+    backupError: string;
+    backupErrorDescription: string;
+    restoreSuccess: string;
+    restoreSuccessDescription: string;
+    restoreError: string;
+    restoreErrorDescription: string;
   };
   addUserDialog: {
     title: string;
@@ -384,6 +392,14 @@ export const settings: Record<Language, SettingsTranslations> = {
       profileUpdatedDescription: 'تم تحديث الملف الشخصي بنجاح',
       error: 'خطأ',
       requiredFields: 'يرجى ملء جميع الحقول المطلوبة',
+      backupSuccess: 'تم التصدير',
+      backupSuccessDescription: 'تم تصدير قاعدة البيانات بنجاح',
+      backupError: 'خطأ في التصدير',
+      backupErrorDescription: 'فشل تصدير قاعدة البيانات',
+      restoreSuccess: 'تم الاستيراد',
+      restoreSuccessDescription: 'تم استيراد قاعدة البيانات بنجاح. يرجى إعادة تشغيل التطبيق.',
+      restoreError: 'خطأ في الاستيراد',
+      restoreErrorDescription: 'فشل استيراد قاعدة البيانات',
     },
     addUserDialog: {
       title: 'إضافة مستخدم جديد',
@@ -606,6 +622,14 @@ export const settings: Record<Language, SettingsTranslations> = {
       profileUpdatedDescription: 'Profile updated successfully',
       error: 'Error',
       requiredFields: 'Please fill in all required fields',
+      backupSuccess: 'Export Complete',
+      backupSuccessDescription: 'Database exported successfully',
+      backupError: 'Export Failed',
+      backupErrorDescription: 'Failed to export database',
+      restoreSuccess: 'Import Complete',
+      restoreSuccessDescription: 'Database imported successfully. Please restart the application.',
+      restoreError: 'Import Failed',
+      restoreErrorDescription: 'Failed to import database',
     },
     addUserDialog: {
       title: 'Add New User',

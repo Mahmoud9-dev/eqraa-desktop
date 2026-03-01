@@ -1,4 +1,3 @@
-'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { translations, type Language, type Translations } from '@/lib/i18n';

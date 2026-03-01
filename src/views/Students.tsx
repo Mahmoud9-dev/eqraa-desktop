@@ -1,4 +1,3 @@
-'use client';
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -42,16 +41,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PageHeader from "@/components/PageHeader";
 import { Department, StudentGrade } from "@/types";
-import { getSupabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import {
+  getStudentsWithTeachers,
+  addStudent,
+  updateStudent,
+  deleteStudent,
+  type StudentWithTeacher,
+} from "@/lib/database/repositories/students";
+import {
+  getAllStudentNotes,
+  addStudentNote,
+  updateStudentNote,
+  deleteStudentNote,
+} from "@/lib/database/repositories/student-notes";
 
-// Supabase types
-type DbStudent = Tables<"students">;
-type DbStudentNote = Tables<"student_notes">;
-
-// Local Student interface that extends Supabase data with camelCase aliases
-interface Student extends Omit<DbStudent, 'images'> {
-  images?: {
+// Local Student interface that extends SQLite data with parsed images and camelCase aliases
+interface Student extends StudentWithTeacher {
+  parsedImages?: {
     new?: string;
     recent1?: string;
     recent2?: string;
@@ -114,38 +120,35 @@ const Students = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
 
-  // Load students from Supabase on mount
+  // Load students from SQLite on mount
   const loadStudents = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await getSupabase()
-        .from("students")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const data = await getStudentsWithTeachers();
 
-      if (error) {
-        console.error("Error loading students:", error);
-        return;
-      }
-
-      if (data) {
-        // Transform Supabase data to local Student format
-        const transformedStudents: Student[] = data.map((s) => ({
-          ...s,
-          // Parse images from JSON if it's a string
-          images: typeof s.images === 'string' ? JSON.parse(s.images) : s.images as Student['images'],
-          // Map snake_case to camelCase for compatibility
-          teacherId: s.teacher_id || "",
-          partsMemorized: s.parts_memorized ?? 0,
-          currentProgress: s.current_progress || "",
-          previousProgress: s.previous_progress || "",
-          parentName: s.parent_name || "",
-          parentPhone: s.parent_phone || "",
-          isActive: s.is_active ?? true,
-          createdAt: s.created_at ? new Date(s.created_at) : new Date(),
-        }));
-        setStudents(transformedStudents);
-      }
+      // Transform SQLite data to local Student format
+      const transformedStudents: Student[] = data.map((s) => ({
+        ...s,
+        // Parse images from JSON string
+        parsedImages: (() => {
+          try {
+            return typeof s.images === 'string' && s.images ? JSON.parse(s.images) : {};
+          } catch {
+            return {};
+          }
+        })(),
+        // Map snake_case to camelCase for compatibility
+        teacherId: s.teacher_id || "",
+        partsMemorized: s.parts_memorized ?? 0,
+        currentProgress: s.current_progress || "",
+        previousProgress: s.previous_progress || "",
+        parentName: s.parent_name || "",
+        parentPhone: s.parent_phone || "",
+        // SQLite stores booleans as integers (1/0)
+        isActive: s.is_active === 1,
+        createdAt: s.created_at ? new Date(s.created_at) : new Date(),
+      }));
+      setStudents(transformedStudents);
     } catch (error) {
       console.error("Error loading students:", error);
     } finally {
@@ -156,13 +159,6 @@ const Students = () => {
   useEffect(() => {
     loadStudents();
   }, [loadStudents]);
-
-  // Mock teacher data for display
-  const teachers = {
-    teacher1: "الشيخ خالد أحمد",
-    teacher2: "الشيخ أحمد محمد",
-    teacher3: "الشيخ محمد حسن",
-  };
 
   // Mock grades and notes data
   const studentsGrades: { [key: string]: StudentGrade[] } = {
@@ -185,38 +181,28 @@ const Students = () => {
 
   const [studentsNotes, setStudentsNotes] = useState<{ [key: string]: StudentNote[] }>({});
 
-  // Load student notes from Supabase
+  // Load student notes from SQLite
   const loadStudentNotes = useCallback(async () => {
     try {
-      const { data, error } = await getSupabase()
-        .from("student_notes")
-        .select("*")
-        .order("note_date", { ascending: false });
+      const data = await getAllStudentNotes();
 
-      if (error) {
-        console.error("Error loading student notes:", error);
-        return;
-      }
-
-      if (data) {
-        // Group notes by student_id
-        const notesMap: { [key: string]: StudentNote[] } = {};
-        data.forEach((note) => {
-          const studentId = note.student_id;
-          if (!notesMap[studentId]) {
-            notesMap[studentId] = [];
-          }
-          notesMap[studentId].push({
-            id: note.id,
-            student_id: note.student_id,
-            type: note.type as "إيجابي" | "سلبي",
-            content: note.content,
-            note_date: note.note_date,
-            teacher_name: note.teacher_name,
-          });
+      // Group notes by student_id
+      const notesMap: { [key: string]: StudentNote[] } = {};
+      data.forEach((note) => {
+        const studentId = note.student_id;
+        if (!notesMap[studentId]) {
+          notesMap[studentId] = [];
+        }
+        notesMap[studentId].push({
+          id: note.id,
+          student_id: note.student_id,
+          type: note.type as "إيجابي" | "سلبي",
+          content: note.content,
+          note_date: note.note_date,
+          teacher_name: note.teacher_name,
         });
-        setStudentsNotes(notesMap);
-      }
+      });
+      setStudentsNotes(notesMap);
     } catch (error) {
       console.error("Error loading student notes:", error);
     }
@@ -272,7 +258,7 @@ const Students = () => {
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (teachers[student.teacherId as keyof typeof teachers] || "")
+      (student.teacher_name || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
     const matchesDepartment =
@@ -324,35 +310,19 @@ const Students = () => {
     }
 
     try {
-      const { data, error } = await getSupabase()
-        .from("students")
-        .insert({
-          name: newStudent.name || "",
-          age: newStudent.age || 0,
-          grade: newStudent.grade || "",
-          department: newStudent.department || "quran",
-          teacher_id: newStudent.teacherId || null,
-          parts_memorized: newStudent.partsMemorized || 0,
-          current_progress: newStudent.currentProgress || "",
-          previous_progress: newStudent.previousProgress || "",
-          attendance: newStudent.attendance || 0,
-          parent_name: newStudent.parentName || null,
-          parent_phone: newStudent.parentPhone || null,
-          is_active: newStudent.isActive ?? true,
-          images: newStudent.images || null,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error adding student:", error);
-        toast({
-          title: t.students.toast.error,
-          description: t.students.toast.addError,
-          variant: "destructive",
-        });
-        return;
-      }
+      await addStudent({
+        name: newStudent.name || "",
+        age: newStudent.age || 0,
+        grade: newStudent.grade || "",
+        department: newStudent.department || "quran",
+        teacher_id: newStudent.teacherId || null,
+        parts_memorized: newStudent.partsMemorized || 0,
+        current_progress: newStudent.currentProgress || "",
+        previous_progress: newStudent.previousProgress || "",
+        parent_name: newStudent.parentName || undefined,
+        parent_phone: newStudent.parentPhone || undefined,
+        is_active: newStudent.isActive ?? true,
+      });
 
       // Reload students to get the updated list
       await loadStudents();
@@ -411,34 +381,21 @@ const Students = () => {
     }
 
     try {
-      const { error } = await getSupabase()
-        .from("students")
-        .update({
-          name: newStudent.name,
-          age: newStudent.age,
-          grade: newStudent.grade,
-          department: newStudent.department,
-          teacher_id: newStudent.teacherId || null,
-          parts_memorized: newStudent.partsMemorized,
-          current_progress: newStudent.currentProgress,
-          previous_progress: newStudent.previousProgress,
-          attendance: newStudent.attendance,
-          parent_name: newStudent.parentName || null,
-          parent_phone: newStudent.parentPhone || null,
-          is_active: newStudent.isActive,
-          images: newStudent.images || null,
-        })
-        .eq("id", selectedStudent.id);
-
-      if (error) {
-        console.error("Error updating student:", error);
-        toast({
-          title: t.students.toast.error,
-          description: t.students.toast.editError,
-          variant: "destructive",
-        });
-        return;
-      }
+      await updateStudent(selectedStudent.id, {
+        name: newStudent.name,
+        age: newStudent.age,
+        grade: newStudent.grade,
+        department: newStudent.department,
+        teacher_id: newStudent.teacherId || null,
+        parts_memorized: newStudent.partsMemorized,
+        current_progress: newStudent.currentProgress,
+        previous_progress: newStudent.previousProgress,
+        attendance: newStudent.attendance,
+        parent_name: newStudent.parentName || null,
+        parent_phone: newStudent.parentPhone || null,
+        is_active: newStudent.isActive ? 1 : 0,
+        images: newStudent.images ? JSON.stringify(newStudent.images) : "{}",
+      });
 
       // Reload students to get the updated list
       await loadStudents();
@@ -486,20 +443,7 @@ const Students = () => {
     if (!selectedStudent) return;
 
     try {
-      const { error } = await getSupabase()
-        .from("students")
-        .delete()
-        .eq("id", selectedStudent.id);
-
-      if (error) {
-        console.error("Error deleting student:", error);
-        toast({
-          title: t.students.toast.error,
-          description: t.students.toast.deleteError,
-          variant: "destructive",
-        });
-        return;
-      }
+      await deleteStudent(selectedStudent.id);
 
       // Reload students to get the updated list
       await loadStudents();
@@ -527,15 +471,15 @@ const Students = () => {
       age: student.age,
       grade: student.grade,
       department: student.department,
-      teacherId: student.teacherId || student.teacher_id || "",
-      partsMemorized: student.partsMemorized ?? student.parts_memorized ?? 0,
-      currentProgress: student.currentProgress || student.current_progress || "",
-      previousProgress: student.previousProgress || student.previous_progress || "",
+      teacherId: student.teacher_id || "",
+      partsMemorized: student.parts_memorized ?? 0,
+      currentProgress: student.current_progress || "",
+      previousProgress: student.previous_progress || "",
       attendance: student.attendance ?? 0,
-      parentName: student.parentName || student.parent_name || "",
-      parentPhone: student.parentPhone || student.parent_phone || "",
-      isActive: student.isActive ?? student.is_active ?? true,
-      images: student.images || {
+      parentName: student.parent_name || "",
+      parentPhone: student.parent_phone || "",
+      isActive: student.is_active === 1,
+      images: student.parsedImages || {
         new: "",
         recent1: "",
         recent2: "",
@@ -559,6 +503,18 @@ const Students = () => {
   ) => {
     setSelectedStudent(student);
     setEditingImageType(imageType);
+    setNewStudent((prev) => ({
+      ...prev,
+      images: student.parsedImages || {
+        new: "",
+        recent1: "",
+        recent2: "",
+        recent3: "",
+        distant1: "",
+        distant2: "",
+        distant3: "",
+      },
+    }));
     setIsEditImagesDialogOpen(true);
   };
 
@@ -566,22 +522,9 @@ const Students = () => {
     if (!selectedStudent) return;
 
     try {
-      const { error } = await getSupabase()
-        .from("students")
-        .update({
-          images: newStudent.images || null,
-        })
-        .eq("id", selectedStudent.id);
-
-      if (error) {
-        console.error("Error updating images:", error);
-        toast({
-          title: t.students.toast.error,
-          description: t.students.toast.imageEditError,
-          variant: "destructive",
-        });
-        return;
-      }
+      await updateStudent(selectedStudent.id, {
+        images: newStudent.images ? JSON.stringify(newStudent.images) : "{}",
+      });
 
       // Reload students to get the updated list
       await loadStudents();
@@ -614,25 +557,13 @@ const Students = () => {
     }
 
     try {
-      const { error } = await getSupabase()
-        .from("student_notes")
-        .insert({
-          student_id: selectedStudent.id,
-          type: newNote.type,
-          content: newNote.content,
-          note_date: newNote.date,
-          teacher_name: newNote.teacher,
-        });
-
-      if (error) {
-        console.error("Error adding note:", error);
-        toast({
-          title: t.students.toast.error,
-          description: t.students.toast.noteAddError,
-          variant: "destructive",
-        });
-        return;
-      }
+      await addStudentNote({
+        student_id: selectedStudent.id,
+        type: newNote.type,
+        content: newNote.content,
+        note_date: newNote.date,
+        teacher_name: newNote.teacher,
+      });
 
       // Reload notes to get the updated list
       await loadStudentNotes();
@@ -670,25 +601,12 @@ const Students = () => {
     }
 
     try {
-      const { error } = await getSupabase()
-        .from("student_notes")
-        .update({
-          type: newNote.type,
-          content: newNote.content,
-          note_date: newNote.date,
-          teacher_name: newNote.teacher,
-        })
-        .eq("id", selectedNote.id);
-
-      if (error) {
-        console.error("Error updating note:", error);
-        toast({
-          title: t.students.toast.error,
-          description: t.students.toast.noteEditError,
-          variant: "destructive",
-        });
-        return;
-      }
+      await updateStudentNote(selectedNote.id, {
+        type: newNote.type,
+        content: newNote.content,
+        note_date: newNote.date,
+        teacher_name: newNote.teacher,
+      });
 
       // Reload notes to get the updated list
       await loadStudentNotes();
@@ -718,20 +636,7 @@ const Students = () => {
 
   const handleDeleteNote = async (studentId: string, noteId: string) => {
     try {
-      const { error } = await getSupabase()
-        .from("student_notes")
-        .delete()
-        .eq("id", noteId);
-
-      if (error) {
-        console.error("Error deleting note:", error);
-        toast({
-          title: t.students.toast.error,
-          description: t.students.toast.noteDeleteError,
-          variant: "destructive",
-        });
-        return;
-      }
+      await deleteStudentNote(noteId);
 
       // Reload notes to get the updated list
       await loadStudentNotes();
@@ -1192,14 +1097,10 @@ const Students = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs sm:text-sm hidden md:table-cell">
-                            {
-                              teachers[
-                                student.teacherId as keyof typeof teachers
-                              ]
-                            }
+                            {student.teacher_name || ""}
                           </TableCell>
                           <TableCell className="text-xs sm:text-sm hidden lg:table-cell">
-                            {student.partsMemorized}
+                            {student.parts_memorized ?? 0}
                           </TableCell>
                           <TableCell
                             className={`text-xs sm:text-sm hidden xl:table-cell ${getAttendanceColor(
@@ -1211,12 +1112,12 @@ const Students = () => {
                           <TableCell className="text-xs sm:text-sm">
                             <Badge
                               className={
-                                student.isActive
+                                student.is_active === 1
                                   ? "bg-green-100 text-green-800 text-xs"
                                   : "bg-red-100 text-red-800 text-xs"
                               }
                             >
-                              {student.isActive ? t.students.status.active : t.students.status.inactive}
+                              {student.is_active === 1 ? t.students.status.active : t.students.status.inactive}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-xs sm:text-sm">
@@ -1283,7 +1184,7 @@ const Students = () => {
                         </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {teachers[student.teacherId as keyof typeof teachers]} •{" "}
+                        {student.teacher_name || ""} •{" "}
                         {getDepartmentName(student.department)}
                       </div>
                       <div className="mt-3">
@@ -1357,7 +1258,7 @@ const Students = () => {
                         </Badge>
                       </h3>
 
-                      {student.images && (
+                      {student.parsedImages && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* السورة الجديدة */}
                           <div className="space-y-2">
@@ -1378,7 +1279,7 @@ const Students = () => {
                             </div>
                             <div className="p-3 bg-green-100 rounded border border-green-300 min-h-[60px]">
                               <p className="text-sm text-green-800">
-                                {student.images.new ||
+                                {student.parsedImages.new ||
                                   t.students.images.noNewImage}
                               </p>
                             </div>
@@ -1405,19 +1306,19 @@ const Students = () => {
                               <div className="p-2 bg-blue-100 rounded border border-blue-300">
                                 <p className="text-xs text-blue-600">1:</p>
                                 <p className="text-sm text-blue-800">
-                                  {student.images.recent1 || t.students.images.noData}
+                                  {student.parsedImages.recent1 || t.students.images.noData}
                                 </p>
                               </div>
                               <div className="p-2 bg-blue-100 rounded border border-blue-300">
                                 <p className="text-xs text-blue-600">2:</p>
                                 <p className="text-sm text-blue-800">
-                                  {student.images.recent2 || t.students.images.noData}
+                                  {student.parsedImages.recent2 || t.students.images.noData}
                                 </p>
                               </div>
                               <div className="p-2 bg-blue-100 rounded border border-blue-300">
                                 <p className="text-xs text-blue-600">3:</p>
                                 <p className="text-sm text-blue-800">
-                                  {student.images.recent3 || t.students.images.noData}
+                                  {student.parsedImages.recent3 || t.students.images.noData}
                                 </p>
                               </div>
                             </div>
@@ -1444,19 +1345,19 @@ const Students = () => {
                               <div className="p-2 bg-orange-100 rounded border border-orange-300">
                                 <p className="text-xs text-orange-600">1:</p>
                                 <p className="text-sm text-orange-800">
-                                  {student.images.distant1 || t.students.images.noData}
+                                  {student.parsedImages.distant1 || t.students.images.noData}
                                 </p>
                               </div>
                               <div className="p-2 bg-orange-100 rounded border border-orange-300">
                                 <p className="text-xs text-orange-600">2:</p>
                                 <p className="text-sm text-orange-800">
-                                  {student.images.distant2 || t.students.images.noData}
+                                  {student.parsedImages.distant2 || t.students.images.noData}
                                 </p>
                               </div>
                               <div className="p-2 bg-orange-100 rounded border border-orange-300">
                                 <p className="text-xs text-orange-600">3:</p>
                                 <p className="text-sm text-orange-800">
-                                  {student.images.distant3 || t.students.images.noData}
+                                  {student.parsedImages.distant3 || t.students.images.noData}
                                 </p>
                               </div>
                             </div>
@@ -1464,7 +1365,7 @@ const Students = () => {
                         </div>
                       )}
 
-                      {!student.images && (
+                      {!student.parsedImages && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p>{t.students.images.noImagesForStudent}</p>
                         </div>
@@ -1473,9 +1374,9 @@ const Students = () => {
                       <div className="mt-4 pt-4 border-t">
                         <div className="flex justify-between items-center text-sm text-muted-foreground">
                           <span>
-                            {t.students.images.totalPartsMemorized}: {student.partsMemorized}
+                            {t.students.images.totalPartsMemorized}: {student.parts_memorized ?? 0}
                           </span>
-                          <span>{t.students.images.currentProgressLabel}: {student.currentProgress}</span>
+                          <span>{t.students.images.currentProgressLabel}: {student.current_progress || ""}</span>
                         </div>
                       </div>
                     </div>

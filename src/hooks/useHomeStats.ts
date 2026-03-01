@@ -1,7 +1,7 @@
-'use client';
-
-import { useQuery } from '@tanstack/react-query';
-import { getSupabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from "react";
+import { getStudentCount, getAttendanceAverage } from "@/lib/database/repositories/students";
+import { getTeacherCount } from "@/lib/database/repositories/teachers";
+import { getUpcomingMeetingCount } from "@/lib/database/repositories/meetings";
 
 interface HomeStats {
   totalStudents: number;
@@ -11,80 +11,32 @@ interface HomeStats {
 }
 
 async function fetchHomeStats(): Promise<HomeStats> {
-  const today = new Date().toISOString().split('T')[0];
-
-  // Execute all queries in parallel for better performance
-  const supabase = getSupabase();
-  const [studentsResult, teachersResult, attendanceResult, meetingsResult] = await Promise.all([
-    supabase
-      .from('students')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true),
-    supabase
-      .from('teachers')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true),
-    supabase
-      .from('students')
-      .select('attendance')
-      .eq('is_active', true)
-      .not('attendance', 'is', null),
-    supabase
-      .from('meetings')
-      .select('id', { count: 'exact', head: true })
-      .gte('meeting_date', today)
-      .eq('status', 'scheduled'),
-  ]);
-
-  const { count: studentsCount, error: studentsError } = studentsResult;
-  const { count: teachersCount, error: teachersError } = teachersResult;
-  const { data: attendanceData, error: attendanceError } = attendanceResult;
-  const { count: meetingsCount, error: meetingsError } = meetingsResult;
-
-  // Handle errors by throwing to trigger React Query error state
-  if (studentsError) {
-    console.error('Error fetching students count:', studentsError);
-    throw new Error('Failed to fetch student statistics');
-  }
-
-  if (teachersError) {
-    console.error('Error fetching teachers count:', teachersError);
-    throw new Error('Failed to fetch teacher statistics');
-  }
-
-  if (attendanceError) {
-    console.error('Error fetching attendance data:', attendanceError);
-    throw new Error('Failed to fetch attendance data');
-  }
-
-  if (meetingsError) {
-    console.error('Error fetching meetings count:', meetingsError);
-    throw new Error('Failed to fetch meeting statistics');
-  }
-
-  // Calculate attendance percentage from students with attendance data
-  let attendancePercentage = 0;
-  if (attendanceData && attendanceData.length > 0) {
-    const totalAttendance = attendanceData.reduce(
-      (sum, student) => sum + (student.attendance || 0),
-      0
-    );
-    attendancePercentage = Math.round(totalAttendance / attendanceData.length);
-  }
+  const [totalStudents, attendancePercentage, activeCircles, upcomingExams] =
+    await Promise.all([
+      getStudentCount(),
+      getAttendanceAverage(),
+      getTeacherCount(),
+      getUpcomingMeetingCount(),
+    ]);
 
   return {
-    totalStudents: studentsCount || 0,
-    attendancePercentage: attendancePercentage || 0,
-    activeCircles: teachersCount || 0, // Using teachers count as proxy for circles
-    upcomingExams: meetingsCount || 0, // Using meetings count as proxy for exams
+    totalStudents,
+    attendancePercentage,
+    activeCircles,
+    upcomingExams,
   };
 }
 
 export function useHomeStats() {
-  return useQuery({
-    queryKey: ['homeStats'],
-    queryFn: fetchHomeStats,
-    staleTime: 60 * 1000, // 1 minute
-    refetchOnWindowFocus: false,
-  });
+  const [data, setData] = useState<HomeStats | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHomeStats()
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  return { data, isLoading };
 }

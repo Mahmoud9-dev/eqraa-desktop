@@ -1,8 +1,9 @@
-'use client';
 
 import PageHeader from "@/components/PageHeader";
 import { useState, useEffect } from "react";
-import { getSupabase } from "@/integrations/supabase/client";
+import { getStudentsByDept, addStudent } from "@/lib/database/repositories/students";
+import { getTeachersByDept } from "@/lib/database/repositories/teachers";
+import { getEducationalSessions, addEducationalSession } from "@/lib/database/repositories/educational-sessions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,13 +36,13 @@ interface Student {
 interface EducationalSession {
   id: string;
   student_id: string;
-  teacher_id: string;
+  teacher_id: string | null;
   topic: string;
   description: string;
-  performance_rating: number;
+  performance_rating: number | null;
   session_date: string;
-  students: { name: string };
-  teachers: { name: string };
+  student_name: string | null;
+  teacher_name: string | null;
 }
 
 const Educational = () => {
@@ -64,26 +65,26 @@ const Educational = () => {
   const icons = t.educational.iconLabels;
 
   const loadData = async () => {
-    const { data: studentsData } = await getSupabase()
-      .from("students")
-      .select("*")
-      .eq("department", "tarbawi")
-      .order("name");
+    try {
+      const studentsData = await getStudentsByDept("tarbawi");
+      setStudents(studentsData);
+    } catch {
+      console.error("Failed to load students");
+    }
 
-    const { data: teachersData } = await getSupabase()
-      .from("teachers")
-      .select("*")
-      .eq("department", "tarbawi")
-      .order("name");
+    try {
+      const teachersData = await getTeachersByDept("tarbawi");
+      setTeachers(teachersData);
+    } catch {
+      console.error("Failed to load teachers");
+    }
 
-    const { data: sessionsData } = await getSupabase()
-      .from("educational_sessions")
-      .select("*, students(name), teachers(name)")
-      .order("session_date", { ascending: false });
-
-    if (studentsData) setStudents(studentsData as Student[]);
-    if (teachersData) setTeachers(teachersData as Teacher[]);
-    if (sessionsData) setSessions(sessionsData as EducationalSession[]);
+    try {
+      const sessionsData = await getEducationalSessions();
+      setSessions(sessionsData);
+    } catch {
+      console.error("Failed to load sessions");
+    }
   };
 
   useEffect(() => {
@@ -96,8 +97,8 @@ const Educational = () => {
     if (!name || !age || !grade) return;
 
     setIsLoading(true);
-    const { error } = await getSupabase().from("students").insert([
-      {
+    try {
+      await addStudent({
         name,
         age: parseInt(age),
         grade,
@@ -105,17 +106,14 @@ const Educational = () => {
         parts_memorized: 0,
         current_progress: "مسجل في البرنامج التربوي",
         previous_progress: "",
-      },
-    ]);
-
-    if (error) {
-      toast({ title: ed.toast.addStudentError, variant: "destructive" });
-    } else {
+      });
       toast({ title: ed.toast.addStudentSuccess });
       setName("");
       setAge("");
       setGrade("");
       loadData();
+    } catch {
+      toast({ title: ed.toast.addStudentError, variant: "destructive" });
     }
     setIsLoading(false);
   };
@@ -125,19 +123,14 @@ const Educational = () => {
     if (!selectedStudent || !selectedTeacher || !topic || !description) return;
 
     setIsLoading(true);
-    const { error } = await getSupabase().from("educational_sessions").insert([
-      {
+    try {
+      await addEducationalSession({
         student_id: selectedStudent,
         teacher_id: selectedTeacher,
         topic,
         description,
         performance_rating: parseInt(rating),
-      },
-    ]);
-
-    if (error) {
-      toast({ title: ed.toast.addSessionError, variant: "destructive" });
-    } else {
+      });
       toast({ title: ed.toast.addSessionSuccess });
       setSelectedStudent("");
       setSelectedTeacher("");
@@ -145,6 +138,8 @@ const Educational = () => {
       setDescription("");
       setRating("5");
       loadData();
+    } catch {
+      toast({ title: ed.toast.addSessionError, variant: "destructive" });
     }
     setIsLoading(false);
   };
@@ -364,10 +359,10 @@ const Educational = () => {
                           {session.topic}
                         </h4>
                         <p className="text-xs sm:text-sm text-muted-foreground">
-                          {ed.registeredSessions.studentLabel} {session.students.name}
+                          {ed.registeredSessions.studentLabel} {session.student_name}
                         </p>
                         <p className="text-xs sm:text-sm text-muted-foreground">
-                          {ed.registeredSessions.teacherLabel} {session.teachers.name}
+                          {ed.registeredSessions.teacherLabel} {session.teacher_name}
                         </p>
                       </div>
                       <span className="text-xs sm:text-sm bg-primary/10 px-3 py-1 rounded-full">
