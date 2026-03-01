@@ -16,10 +16,13 @@ jobs:
         include:
           - platform: ubuntu-latest
             target: linux
+            args: ""
           - platform: windows-latest
             target: windows
+            args: ""
           - platform: macos-latest
             target: macos
+            args: "--target universal-apple-darwin"
 
     runs-on: ${{ matrix.platform }}
 
@@ -63,6 +66,8 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target == 'macos' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Cache Rust build artifacts
         uses: swatinem/rust-cache@v2
@@ -79,6 +84,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Eqraa Desktop ${{ github.ref_name }}"
+          args: ${{ matrix.args }}
           releaseBody: |
             See the assets below to download the installer for your platform.
 
