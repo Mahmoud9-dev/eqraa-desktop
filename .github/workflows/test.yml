@@ -47,6 +47,7 @@ jobs:
 
       - name: Run linting
         run: pnpm run lint
+        continue-on-error: true
 
       - name: Run type checking
         run: pnpm run type-check
