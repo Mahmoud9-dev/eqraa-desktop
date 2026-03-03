@@ -1,6 +1,7 @@
 # Eqraa Desktop (إقراء)
 
 > Desktop management system for Islamic educational centers and Quran memorization institutions.
+<img width="1280" height="656" alt="image" src="https://github.com/user-attachments/assets/73417ddb-8d80-44c6-967c-3eb27ac26477" />
 
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8D8?style=flat-square&logo=tauri)](https://v2.tauri.app/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
