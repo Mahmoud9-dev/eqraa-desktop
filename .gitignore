@@ -44,3 +44,9 @@ test-results/
 
 # Tauri
 src-tauri/target/
+
+# Only pnpm is used — block other lockfiles
+package-lock.json
+bun.lockb
+deno.lock
+yarn.lock
