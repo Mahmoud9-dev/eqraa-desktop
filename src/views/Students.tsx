@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -37,9 +37,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Download, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PageHeader from "@/components/PageHeader";
+import ReportTemplate from "@/components/ReportTemplate";
+import { exportCSV } from "@/lib/export/csv";
+import { exportPDF } from "@/lib/export/pdf";
 import { Department, StudentGrade } from "@/types";
 import {
   getStudentsWithTeachers,
@@ -54,6 +58,7 @@ import {
   updateStudentNote,
   deleteStudentNote,
 } from "@/lib/database/repositories/student-notes";
+import { getActiveTeachers, type Teacher } from "@/lib/database/repositories/teachers";
 
 // Local Student interface that extends SQLite data with parsed images and camelCase aliases
 interface Student extends StudentWithTeacher {
@@ -119,6 +124,7 @@ const Students = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
+  const [teachersList, setTeachersList] = useState<Teacher[]>([]);
 
   // Load students from SQLite on mount
   const loadStudents = useCallback(async () => {
@@ -158,6 +164,7 @@ const Students = () => {
 
   useEffect(() => {
     loadStudents();
+    getActiveTeachers().then(setTeachersList).catch(console.error);
   }, [loadStudents]);
 
   // Mock grades and notes data
@@ -254,6 +261,7 @@ const Students = () => {
   });
   const { toast } = useToast();
   const { t } = useLanguage();
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
@@ -276,6 +284,57 @@ const Students = () => {
         return t.students.departments.tarbawi;
       default:
         return dept;
+    }
+  };
+
+  const studentReportHeaders = [
+    t.students.table.name,
+    t.students.table.age,
+    t.students.table.grade,
+    t.students.table.department,
+    t.students.table.teacher,
+    t.students.table.partsMemorized,
+    t.students.table.status,
+  ];
+
+  const getStudentReportRows = () =>
+    filteredStudents.map((s) => [
+      s.name,
+      String(s.age ?? ""),
+      s.grade ?? "",
+      getDepartmentName(s.department),
+      s.teacher_name ?? "",
+      String(s.parts_memorized ?? 0),
+      s.is_active === 1 || s.isActive ? t.students.status.active : t.students.status.inactive,
+    ]);
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportCSV(
+        `students-${new Date().toISOString().split("T")[0]}.csv`,
+        studentReportHeaders,
+        getStudentReportRows()
+      );
+      if (result) {
+        toast({ title: t.export.exportSuccess });
+      }
+    } catch {
+      toast({ title: t.export.exportError, variant: "destructive" });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    try {
+      const result = await exportPDF(
+        reportRef.current,
+        `students-${new Date().toISOString().split("T")[0]}.pdf`
+      );
+      if (result) {
+        toast({ title: t.export.exportSuccess });
+      }
+    } catch {
+      toast({ title: t.export.exportError, variant: "destructive" });
     }
   };
 
@@ -732,6 +791,16 @@ const Students = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                <Download className="h-4 w-4 me-1" />
+                {t.export.exportCSV}
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                <FileText className="h-4 w-4 me-1" />
+                {t.export.exportPDF}
+              </Button>
+            </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-primary text-primary-foreground w-full sm:w-auto text-sm">
@@ -825,7 +894,7 @@ const Students = () => {
                       {t.students.form.teacher}
                     </Label>
                     <Select
-                      value={newStudent.teacherId}
+                      value={newStudent.teacherId || undefined}
                       onValueChange={(value) =>
                         setNewStudent({ ...newStudent, teacherId: value })
                       }
@@ -834,13 +903,11 @@ const Students = () => {
                         <SelectValue placeholder={t.students.form.selectTeacher} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="teacher1">
-                          الشيخ خالد أحمد
-                        </SelectItem>
-                        <SelectItem value="teacher2">
-                          الشيخ أحمد محمد
-                        </SelectItem>
-                        <SelectItem value="teacher3">الشيخ محمد حسن</SelectItem>
+                        {teachersList.map((teacher) => (
+                          <SelectItem key={teacher.id} value={teacher.id}>
+                            {teacher.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1540,7 +1607,7 @@ const Students = () => {
                 {t.students.form.teacher}
               </Label>
               <Select
-                value={newStudent.teacherId}
+                value={newStudent.teacherId || undefined}
                 onValueChange={(value) =>
                   setNewStudent({ ...newStudent, teacherId: value })
                 }
@@ -1549,9 +1616,11 @@ const Students = () => {
                   <SelectValue placeholder={t.students.form.selectTeacher} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="teacher1">الشيخ خالد أحمد</SelectItem>
-                  <SelectItem value="teacher2">الشيخ أحمد محمد</SelectItem>
-                  <SelectItem value="teacher3">الشيخ محمد حسن</SelectItem>
+                  {teachersList.map((teacher) => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1966,6 +2035,13 @@ const Students = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReportTemplate
+        ref={reportRef}
+        title={`${t.export.reportTitle} — ${t.export.students}`}
+        headers={studentReportHeaders}
+        rows={getStudentReportRows()}
+      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getStudentsByDept, addStudent } from "@/lib/database/repositories/students";
 import { getTeachersByDept, addTeacher } from "@/lib/database/repositories/teachers";
 import { getQuranSessions, addQuranSession } from "@/lib/database/repositories/quran-sessions";
@@ -23,10 +23,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDate } from "@/lib/i18n";
+import ReportTemplate from "@/components/ReportTemplate";
+import { exportCSV } from "@/lib/export/csv";
+import { exportPDF } from "@/lib/export/pdf";
 
 interface Teacher {
   id: string;
@@ -74,7 +77,55 @@ const Quran = () => {
   const [audioUrl, setAudioUrl] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
-  const { t, tFunc, languageMeta } = useLanguage();
+  const { t, tFunc, languageMeta, language } = useLanguage();
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  const quranReportHeaders = [
+    t.quran.sessionForm.studentLabel,
+    t.quran.sessionForm.surahLabel,
+    t.quran.sessionForm.fromVerse + " - " + t.quran.sessionForm.toVerse,
+    t.quran.sessionForm.ratingLabel,
+    t.quran.sessionList.title,
+  ];
+
+  const getQuranReportRows = () =>
+    sessions.map((s) => [
+      s.student_name || "",
+      s.surah_name,
+      `${s.verses_from} - ${s.verses_to}`,
+      String(s.performance_rating),
+      s.session_date ? formatDate(s.session_date, language) : "",
+    ]);
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportCSV(
+        `quran-progress-${new Date().toISOString().split("T")[0]}.csv`,
+        quranReportHeaders,
+        getQuranReportRows()
+      );
+      if (result) {
+        toast({ title: t.export.exportSuccess });
+      }
+    } catch {
+      toast({ title: t.export.exportError, variant: "destructive" });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    try {
+      const result = await exportPDF(
+        reportRef.current,
+        `quran-progress-${new Date().toISOString().split("T")[0]}.pdf`
+      );
+      if (result) {
+        toast({ title: t.export.exportSuccess });
+      }
+    } catch {
+      toast({ title: t.export.exportError, variant: "destructive" });
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -244,6 +295,16 @@ const Quran = () => {
     <div className="min-h-screen bg-background">
       <PageHeader title={t.quran.pageTitle} />
       <main className="container mx-auto px-4 py-12">
+        <div className="flex flex-wrap items-center justify-end gap-2 mb-4">
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 me-1" />
+            {t.export.exportCSV}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPDF}>
+            <FileText className="h-4 w-4 me-1" />
+            {t.export.exportPDF}
+          </Button>
+        </div>
         <Tabs defaultValue="sessions" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="sessions">{t.quran.tabs.sessions}</TabsTrigger>
@@ -629,6 +690,13 @@ const Quran = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ReportTemplate
+        ref={reportRef}
+        title={`${t.export.reportTitle} — ${t.export.quranProgress}`}
+        headers={quranReportHeaders}
+        rows={getQuranReportRows()}
+      />
     </div>
   );
 };
