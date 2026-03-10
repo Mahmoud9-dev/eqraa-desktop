@@ -85,7 +85,7 @@ const Quran = () => {
     t.quran.sessionForm.surahLabel,
     t.quran.sessionForm.fromVerse + " - " + t.quran.sessionForm.toVerse,
     t.quran.sessionForm.ratingLabel,
-    t.quran.sessionList.title,
+    t.attendance.table.date,
   ];
 
   const getQuranReportRows = () =>
@@ -97,10 +97,15 @@ const Quran = () => {
       s.session_date ? formatDate(s.session_date, language) : "",
     ]);
 
+  const getLocalDateStamp = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  };
+
   const handleExportCSV = async () => {
     try {
       const result = await exportCSV(
-        `quran-progress-${new Date().toISOString().split("T")[0]}.csv`,
+        `quran-progress-${getLocalDateStamp()}.csv`,
         quranReportHeaders,
         getQuranReportRows()
       );
@@ -117,7 +122,7 @@ const Quran = () => {
     try {
       const result = await exportPDF(
         reportRef.current,
-        `quran-progress-${new Date().toISOString().split("T")[0]}.pdf`
+        `quran-progress-${getLocalDateStamp()}.pdf`
       );
       if (result) {
         toast({ title: t.export.exportSuccess });

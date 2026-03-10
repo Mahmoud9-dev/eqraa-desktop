@@ -9,6 +9,7 @@ license=('MIT')
 depends=('webkit2gtk-4.1' 'gtk3')
 makedepends=('rust' 'nodejs' 'pnpm' 'patchelf' 'librsvg' 'libayatana-appindicator')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+# sha256sums=SKIP: the CI workflow replaces the source tarball and checksums inline before invoking makepkg
 sha256sums=('SKIP')
 
 build() {

@@ -134,18 +134,28 @@ const Attendance = () => {
     t.attendance.table.notes,
   ];
 
+  const getLocalDateStamp = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  };
+
   const getAttendanceReportRows = () =>
-    attendanceRecords.map((r) => [
-      getStudentName(r.student_id || r.studentId) || getTeacherName(r.teacher_id || r.teacherId),
-      r.record_date || r.date || "",
-      statusLabels[r.status] || r.status,
-      r.notes || "",
-    ]);
+    attendanceRecords.map((r) => {
+      const studentName = getStudentName(r.student_id || r.studentId);
+      const teacherName = getTeacherName(r.teacher_id || r.teacherId);
+      const name = studentName !== "-" ? studentName : teacherName;
+      return [
+        name,
+        formatDate(r.record_date || r.date || "", language),
+        statusLabels[r.status] || r.status,
+        r.notes || "",
+      ];
+    });
 
   const handleExportCSV = async () => {
     try {
       const result = await exportCSV(
-        `attendance-${new Date().toISOString().split("T")[0]}.csv`,
+        `attendance-${getLocalDateStamp()}.csv`,
         attendanceReportHeaders,
         getAttendanceReportRows()
       );
@@ -162,7 +172,7 @@ const Attendance = () => {
     try {
       const result = await exportPDF(
         reportRef.current,
-        `attendance-${new Date().toISOString().split("T")[0]}.pdf`
+        `attendance-${getLocalDateStamp()}.pdf`
       );
       if (result) {
         toast({ title: t.export.exportSuccess });

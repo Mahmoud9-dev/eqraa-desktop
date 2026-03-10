@@ -58,7 +58,7 @@ import {
   updateStudentNote,
   deleteStudentNote,
 } from "@/lib/database/repositories/student-notes";
-import { getActiveTeachers, type Teacher } from "@/lib/database/repositories/teachers";
+import { getTeachers, type Teacher } from "@/lib/database/repositories/teachers";
 
 // Local Student interface that extends SQLite data with parsed images and camelCase aliases
 interface Student extends StudentWithTeacher {
@@ -164,7 +164,7 @@ const Students = () => {
 
   useEffect(() => {
     loadStudents();
-    getActiveTeachers().then(setTeachersList).catch(console.error);
+    getTeachers().then(setTeachersList).catch(console.error);
   }, [loadStudents]);
 
   // Mock grades and notes data
@@ -308,10 +308,15 @@ const Students = () => {
       s.is_active === 1 || s.isActive ? t.students.status.active : t.students.status.inactive,
     ]);
 
+  const getLocalDateStamp = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  };
+
   const handleExportCSV = async () => {
     try {
       const result = await exportCSV(
-        `students-${new Date().toISOString().split("T")[0]}.csv`,
+        `students-${getLocalDateStamp()}.csv`,
         studentReportHeaders,
         getStudentReportRows()
       );
@@ -328,7 +333,7 @@ const Students = () => {
     try {
       const result = await exportPDF(
         reportRef.current,
-        `students-${new Date().toISOString().split("T")[0]}.pdf`
+        `students-${getLocalDateStamp()}.pdf`
       );
       if (result) {
         toast({ title: t.export.exportSuccess });

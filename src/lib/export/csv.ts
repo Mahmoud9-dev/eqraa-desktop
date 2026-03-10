@@ -3,10 +3,10 @@ import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 export function generateCSV(headers: string[], rows: string[][]): string {
   const BOM = "\uFEFF";
-  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const escapeCSV = (v: string) => `"${v.replace(/"/g, '""')}"`;
   const lines = [
-    headers.map(escape).join(","),
-    ...rows.map((r) => r.map(escape).join(",")),
+    headers.map(escapeCSV).join(","),
+    ...rows.map((r) => r.map(escapeCSV).join(",")),
   ];
   return BOM + lines.join("\n");
 }

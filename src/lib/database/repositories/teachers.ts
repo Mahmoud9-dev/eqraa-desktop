@@ -12,12 +12,78 @@ export interface Teacher {
   created_at: string;
 }
 
+const DEFAULT_TEACHERS: Array<{
+  name: string;
+  specialization: string;
+  department: string;
+  email?: string;
+  phone?: string;
+  experience?: number;
+}> = [
+  {
+    name: "الشيخ أحمد محمد",
+    specialization: "حفظ القرآن الكريم",
+    department: "quran",
+    experience: 12,
+  },
+  {
+    name: "الشيخ خالد حسن",
+    specialization: "أحكام التجويد ومخارج الحروف",
+    department: "tajweed",
+    experience: 9,
+  },
+  {
+    name: "الأستاذ عبدالله علي",
+    specialization: "التربية الإسلامية والآداب",
+    department: "tarbawi",
+    experience: 7,
+  },
+];
+
+let seedTeachersPromise: Promise<void> | null = null;
+
+async function ensureTeachersSeeded(): Promise<void> {
+  if (!seedTeachersPromise) {
+    seedTeachersPromise = (async () => {
+      const db = await getDb();
+      const result = await db.select<{ count: number }[]>(
+        "SELECT COUNT(*) as count FROM teachers"
+      );
+      const teachersCount = result[0]?.count ?? 0;
+
+      if (teachersCount > 0) return;
+
+      for (const teacher of DEFAULT_TEACHERS) {
+        await db.execute(
+          "INSERT INTO teachers (id, name, specialization, department, email, phone, experience, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, 1)",
+          [
+            uuid(),
+            teacher.name,
+            teacher.specialization,
+            teacher.department,
+            teacher.email ?? null,
+            teacher.phone ?? null,
+            teacher.experience ?? null,
+          ]
+        );
+      }
+    })().catch((error) => {
+      seedTeachersPromise = null;
+      throw error;
+    });
+  }
+
+  await seedTeachersPromise;
+}
+
 export async function getTeachers(): Promise<Teacher[]> {
+  await ensureTeachersSeeded();
   const db = await getDb();
   return db.select<Teacher[]>("SELECT * FROM teachers ORDER BY name");
 }
 
 export async function getTeachersByDept(department: string): Promise<Teacher[]> {
+  await ensureTeachersSeeded();
   const db = await getDb();
   return db.select<Teacher[]>(
     "SELECT * FROM teachers WHERE department = $1 ORDER BY name",
@@ -26,6 +92,7 @@ export async function getTeachersByDept(department: string): Promise<Teacher[]> 
 }
 
 export async function getActiveTeachers(): Promise<Teacher[]> {
+  await ensureTeachersSeeded();
   const db = await getDb();
   return db.select<Teacher[]>(
     "SELECT * FROM teachers WHERE is_active = 1 ORDER BY name"
@@ -33,6 +100,7 @@ export async function getActiveTeachers(): Promise<Teacher[]> {
 }
 
 export async function getTeacherCount(): Promise<number> {
+  await ensureTeachersSeeded();
   const db = await getDb();
   const result = await db.select<{ count: number }[]>(
     "SELECT COUNT(*) as count FROM teachers WHERE is_active = 1"

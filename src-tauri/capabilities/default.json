@@ -23,8 +23,7 @@
       "allow": [
         "$DOWNLOAD/**",
         "$DOCUMENT/**",
-        "$DESKTOP/**",
-        "$HOME/**"
+        "$DESKTOP/**"
       ]
     }
   ]
