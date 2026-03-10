@@ -1,0 +1,28 @@
+# Maintainer: Mahmoud
+pkgname=eqraa-desktop
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Eqraa Center Hub - Desktop Edition"
+arch=('x86_64')
+url="https://github.com/Mahmoud9-dev/eqraa-desktop"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3')
+makedepends=('rust' 'nodejs' 'pnpm' 'patchelf' 'librsvg' 'libayatana-appindicator')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+# sha256sums=SKIP: the CI workflow replaces the source tarball and checksums inline before invoking makepkg
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    pnpm install
+    pnpm tauri build --no-bundle
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    install -Dm755 "src-tauri/target/release/eqraa-desktop" "$pkgdir/usr/bin/eqraa-desktop"
+    install -Dm644 "src-tauri/icons/32x32.png" "$pkgdir/usr/share/icons/hicolor/32x32/apps/eqraa-desktop.png"
+    install -Dm644 "src-tauri/icons/128x128.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/eqraa-desktop.png"
+    install -Dm644 "src-tauri/icons/128x128@2x.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/eqraa-desktop.png"
+    install -Dm644 "$startdir/eqraa-desktop.desktop" "$pkgdir/usr/share/applications/eqraa-desktop.desktop"
+}

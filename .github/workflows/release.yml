@@ -88,8 +88,43 @@ jobs:
           releaseBody: |
             See the assets below to download the installer for your platform.
 
-            **Linux:** `.deb` / `.AppImage`
+            **Linux:** `.deb` / `.AppImage` / `.pkg.tar.zst` (Arch)
             **Windows:** `.msi` / `.exe`
             **macOS:** `.dmg`
           releaseDraft: false
           prerelease: false
+
+  arch-package:
+    name: Arch Linux Package
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    needs: [build]
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel git rust nodejs pnpm \
+            webkit2gtk-4.1 gtk3 libayatana-appindicator librsvg patchelf
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build package
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+          cd pkg/arch
+          sed -i 's|source=.*|source=()|' PKGBUILD
+          sed -i 's|sha256sums=.*|sha256sums=()|' PKGBUILD
+          sed -i "s|cd \"\$pkgname-\$pkgver\"|cd $GITHUB_WORKSPACE|g" PKGBUILD
+          su builder -c "makepkg -sf --noconfirm"
+
+      - name: Upload to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pacman -S --noconfirm github-cli
+          gh release upload "${{ github.ref_name }}" \
+            pkg/arch/eqraa-desktop-*.pkg.tar.zst \
+            --clobber

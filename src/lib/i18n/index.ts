@@ -35,6 +35,7 @@ export { type EducationalTranslations, educational } from './educational';
 export { type LibraryTranslations, library } from './library';
 export { type QuranCirclesTranslations, quranCircles } from './quranCircles';
 export { type TarbiwiTranslations, tarbiwi } from './tarbiwi';
+export { type ExportTranslations, exportI18n } from './export';
 
 // --- Formatters ---
 export {
@@ -74,6 +75,7 @@ import type { EducationalTranslations } from './educational';
 import type { LibraryTranslations } from './library';
 import type { QuranCirclesTranslations } from './quranCircles';
 import type { TarbiwiTranslations } from './tarbiwi';
+import type { ExportTranslations } from './export';
 
 import { common } from './common';
 import { nav } from './nav';
@@ -98,6 +100,7 @@ import { educational } from './educational';
 import { library } from './library';
 import { quranCircles } from './quranCircles';
 import { tarbiwi } from './tarbiwi';
+import { exportI18n } from './export';
 
 import type { Language } from './types';
 
@@ -125,6 +128,7 @@ export interface Translations {
   library: LibraryTranslations;
   quranCircles: QuranCirclesTranslations;
   tarbiwi: TarbiwiTranslations;
+  export: ExportTranslations;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -152,6 +156,7 @@ export const translations: Record<Language, Translations> = {
     library: library.ar,
     quranCircles: quranCircles.ar,
     tarbiwi: tarbiwi.ar,
+    export: exportI18n.ar,
   },
   en: {
     common: common.en,
@@ -177,5 +182,6 @@ export const translations: Record<Language, Translations> = {
     library: library.en,
     quranCircles: quranCircles.en,
     tarbiwi: tarbiwi.en,
+    export: exportI18n.en,
   },
 };

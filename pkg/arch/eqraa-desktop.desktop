@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Eqraa Desktop
+Comment=Eqraa Center Hub - Desktop Edition
+Exec=eqraa-desktop
+Icon=eqraa-desktop
+Terminal=false
+Type=Application
+Categories=Education;
+StartupWMClass=eqraa-desktop

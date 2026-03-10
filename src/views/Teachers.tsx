@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -42,6 +42,12 @@ import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { Department, Teacher } from "@/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  getTeachers,
+  addTeacher as dbAddTeacher,
+  updateTeacher,
+  deleteTeacher as dbDeleteTeacher,
+} from "@/lib/database/repositories/teachers";
 
 const Teachers = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,53 +62,31 @@ const Teachers = () => {
   const { toast } = useToast();
   const { t, tFunc } = useLanguage();
 
-  // Mock data - will be replaced with actual data from Supabase
-  const [teachers, setTeachers] = useState<Teacher[]>([
-    {
-      id: "1",
-      name: "الشيخ أحمد محمد علي",
-      specialization: "حفظ القرآن الكريم وتجويد",
-      department: "quran" as Department,
-      email: "ahmed@example.com",
-      phone: "01234567890",
-      experience: 15,
-      isActive: true,
-      createdAt: new Date("2020-09-01"),
-    },
-    {
-      id: "2",
-      name: "الشيخ خالد حسن محمد",
-      specialization: "الفقه والعقيدة",
-      department: "tarbawi" as Department,
-      email: "khaled@example.com",
-      phone: "01234567891",
-      experience: 10,
-      isActive: true,
-      createdAt: new Date("2021-03-15"),
-    },
-    {
-      id: "3",
-      name: "الشيخ محمد سعيد أحمد",
-      specialization: "السيرة والحديث",
-      department: "tarbawi" as Department,
-      email: "mohammed@example.com",
-      phone: "01234567892",
-      experience: 8,
-      isActive: true,
-      createdAt: new Date("2022-01-10"),
-    },
-    {
-      id: "4",
-      name: "الشيخ عمر عبدالله",
-      specialization: "التجويد والقراءات",
-      department: "tajweed" as Department,
-      email: "omar@example.com",
-      phone: "01234567893",
-      experience: 12,
-      isActive: true,
-      createdAt: new Date("2019-11-20"),
-    },
-  ]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+
+  const loadTeachers = async () => {
+    try {
+      const data = await getTeachers();
+      const transformed = data.map((t) => ({
+        id: t.id,
+        name: t.name,
+        specialization: t.specialization,
+        department: t.department as Department,
+        email: t.email || "",
+        phone: t.phone || "",
+        experience: t.experience || 0,
+        isActive: t.is_active === 1,
+        createdAt: new Date(t.created_at),
+      }));
+      setTeachers(transformed);
+    } catch (error) {
+      console.error("Error loading teachers:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadTeachers();
+  }, []);
 
   // Extended teacher data for display
   const teachersExtended = teachers.map((teacher) => ({
@@ -170,7 +154,7 @@ const Teachers = () => {
   };
 
   // CRUD functions
-  const handleAddTeacher = () => {
+  const handleAddTeacher = async () => {
     if (
       !newTeacher.name ||
       !newTeacher.specialization ||
@@ -184,36 +168,42 @@ const Teachers = () => {
       return;
     }
 
-    const teacher: Teacher = {
-      id: Date.now().toString(),
-      name: newTeacher.name || "",
-      specialization: newTeacher.specialization || "",
-      department: newTeacher.department as Department,
-      email: newTeacher.email,
-      phone: newTeacher.phone,
-      experience: newTeacher.experience || 0,
-      isActive: newTeacher.isActive || true,
-      createdAt: new Date(),
-    };
+    try {
+      await dbAddTeacher({
+        name: newTeacher.name,
+        specialization: newTeacher.specialization,
+        department: newTeacher.department as string,
+        email: newTeacher.email || undefined,
+        phone: newTeacher.phone || undefined,
+        experience: newTeacher.experience || undefined,
+      });
 
-    setTeachers([...teachers, teacher]);
-    setNewTeacher({
-      name: "",
-      specialization: "",
-      department: "quran",
-      email: "",
-      phone: "",
-      experience: 0,
-      isActive: true,
-    });
-    setIsAddDialogOpen(false);
-    toast({
-      title: t.teachers.toast.addSuccess,
-      description: t.teachers.toast.addSuccessDesc,
-    });
+      await loadTeachers();
+      setNewTeacher({
+        name: "",
+        specialization: "",
+        department: "quran",
+        email: "",
+        phone: "",
+        experience: 0,
+        isActive: true,
+      });
+      setIsAddDialogOpen(false);
+      toast({
+        title: t.teachers.toast.addSuccess,
+        description: t.teachers.toast.addSuccessDesc,
+      });
+    } catch (error) {
+      console.error("Error adding teacher:", error);
+      toast({
+        title: t.teachers.toast.error,
+        description: String(error),
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditTeacher = () => {
+  const handleEditTeacher = async () => {
     if (
       !selectedTeacher ||
       !newTeacher.name ||
@@ -228,57 +218,62 @@ const Teachers = () => {
       return;
     }
 
-    setTeachers(
-      teachers.map((teacher) =>
-        teacher.id === selectedTeacher.id
-          ? {
-              ...teacher,
-              name: newTeacher.name || teacher.name,
-              specialization:
-                newTeacher.specialization || teacher.specialization,
-              department:
-                (newTeacher.department as Department) || teacher.department,
-              email: newTeacher.email || teacher.email,
-              phone: newTeacher.phone || teacher.phone,
-              experience: newTeacher.experience || teacher.experience,
-              isActive:
-                newTeacher.isActive !== undefined
-                  ? newTeacher.isActive
-                  : teacher.isActive,
-            }
-          : teacher
-      )
-    );
+    try {
+      await updateTeacher(selectedTeacher.id, {
+        name: newTeacher.name,
+        specialization: newTeacher.specialization,
+        department: newTeacher.department as string,
+        email: newTeacher.email || null,
+        phone: newTeacher.phone || null,
+        experience: newTeacher.experience || null,
+      });
 
-    setIsEditDialogOpen(false);
-    setSelectedTeacher(null);
-    setNewTeacher({
-      name: "",
-      specialization: "",
-      department: "quran",
-      email: "",
-      phone: "",
-      experience: 0,
-      isActive: true,
-    });
-    toast({
-      title: t.teachers.toast.editSuccess,
-      description: t.teachers.toast.editSuccessDesc,
-    });
+      await loadTeachers();
+      setIsEditDialogOpen(false);
+      setSelectedTeacher(null);
+      setNewTeacher({
+        name: "",
+        specialization: "",
+        department: "quran",
+        email: "",
+        phone: "",
+        experience: 0,
+        isActive: true,
+      });
+      toast({
+        title: t.teachers.toast.editSuccess,
+        description: t.teachers.toast.editSuccessDesc,
+      });
+    } catch (error) {
+      console.error("Error updating teacher:", error);
+      toast({
+        title: t.teachers.toast.error,
+        description: String(error),
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteTeacher = () => {
+  const handleDeleteTeacher = async () => {
     if (!selectedTeacher) return;
 
-    setTeachers(
-      teachers.filter((teacher) => teacher.id !== selectedTeacher.id)
-    );
-    setIsDeleteDialogOpen(false);
-    setSelectedTeacher(null);
-    toast({
-      title: t.teachers.toast.deleteSuccess,
-      description: t.teachers.toast.deleteSuccessDesc,
-    });
+    try {
+      await dbDeleteTeacher(selectedTeacher.id);
+      await loadTeachers();
+      setIsDeleteDialogOpen(false);
+      setSelectedTeacher(null);
+      toast({
+        title: t.teachers.toast.deleteSuccess,
+        description: t.teachers.toast.deleteSuccessDesc,
+      });
+    } catch (error) {
+      console.error("Error deleting teacher:", error);
+      toast({
+        title: t.teachers.toast.error,
+        description: String(error),
+        variant: "destructive",
+      });
+    }
   };
 
   const openEditDialog = (teacher: Teacher) => {

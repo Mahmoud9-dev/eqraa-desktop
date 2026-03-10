@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Search } from "lucide-react";
+import { CalendarIcon, Download, FileText, Search } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { getStudents as fetchStudents } from "@/lib/database/repositories/students";
@@ -41,6 +41,10 @@ import {
 import type { Student as DbStudent } from "@/lib/database/repositories/students";
 import type { Teacher as DbTeacher } from "@/lib/database/repositories/teachers";
 import type { AttendanceRecord as DbAttendanceRecord } from "@/lib/database/repositories/attendance";
+import ReportTemplate from "@/components/ReportTemplate";
+import { exportCSV } from "@/lib/export/csv";
+import { exportPDF } from "@/lib/export/pdf";
+import { formatDate } from "@/lib/i18n";
 
 interface Student {
   id: string;
@@ -121,6 +125,62 @@ const Attendance = () => {
 
   // date-fns locale based on current language
   const dateLocale = language === 'ar' ? ar : undefined;
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  const attendanceReportHeaders = [
+    t.attendance.table.studentName,
+    t.attendance.table.date,
+    t.attendance.table.status,
+    t.attendance.table.notes,
+  ];
+
+  const getLocalDateStamp = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  };
+
+  const getAttendanceReportRows = () =>
+    attendanceRecords.map((r) => {
+      const studentName = getStudentName(r.student_id || r.studentId);
+      const teacherName = getTeacherName(r.teacher_id || r.teacherId);
+      const name = studentName !== "-" ? studentName : teacherName;
+      return [
+        name,
+        formatDate(r.record_date || r.date || "", language),
+        statusLabels[r.status] || r.status,
+        r.notes || "",
+      ];
+    });
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportCSV(
+        `attendance-${getLocalDateStamp()}.csv`,
+        attendanceReportHeaders,
+        getAttendanceReportRows()
+      );
+      if (result) {
+        toast({ title: t.export.exportSuccess });
+      }
+    } catch {
+      toast({ title: t.export.exportError, variant: "destructive" });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    try {
+      const result = await exportPDF(
+        reportRef.current,
+        `attendance-${getLocalDateStamp()}.pdf`
+      );
+      if (result) {
+        toast({ title: t.export.exportSuccess });
+      }
+    } catch {
+      toast({ title: t.export.exportError, variant: "destructive" });
+    }
+  };
 
   // Load students from SQLite
   const loadStudents = useCallback(async () => {
@@ -368,7 +428,19 @@ const Attendance = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">{t.attendance.sectionTitle}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <h2 className="text-2xl font-bold">{t.attendance.sectionTitle}</h2>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                <Download className="h-4 w-4 me-1" />
+                {t.export.exportCSV}
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                <FileText className="h-4 w-4 me-1" />
+                {t.export.exportPDF}
+              </Button>
+            </div>
+          </div>
           <p className="text-muted-foreground mb-6">
             {t.attendance.sectionDescription}
           </p>
@@ -725,6 +797,13 @@ const Attendance = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ReportTemplate
+        ref={reportRef}
+        title={`${t.export.reportTitle} — ${t.export.attendance}`}
+        headers={attendanceReportHeaders}
+        rows={getAttendanceReportRows()}
+      />
     </div>
   );
 };
