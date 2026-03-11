@@ -1,6 +1,6 @@
 
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { getStudentsByDept, addStudent } from "@/lib/database/repositories/students";
 import { getTeachersByDept, addTeacher } from "@/lib/database/repositories/teachers";
 import { getQuranSessions, addQuranSession } from "@/lib/database/repositories/quran-sessions";
@@ -23,13 +23,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Download, FileText } from "lucide-react";
+import { Check, ChevronsUpDown, Download, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDate } from "@/lib/i18n";
-import ReportTemplate from "@/components/ReportTemplate";
 import { exportCSV } from "@/lib/export/csv";
 import { exportPDF } from "@/lib/export/pdf";
+import PerformanceBarChart from "@/components/charts/PerformanceBarChart";
+import { getPerformanceDistribution, type PerformanceDistributionRow } from "@/lib/database/repositories/stats";
 
 interface Teacher {
   id: string;
@@ -77,8 +78,9 @@ const Quran = () => {
   const [audioUrl, setAudioUrl] = useState<string>("");
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
-  const { t, tFunc, languageMeta, language } = useLanguage();
-  const reportRef = useRef<HTMLDivElement>(null);
+  const { t, tFunc, languageMeta, language, isRTL } = useLanguage();
+  const [isExporting, setIsExporting] = useState(false);
+  const [perfData, setPerfData] = useState<PerformanceDistributionRow[]>([]);
 
   const quranReportHeaders = [
     t.quran.sessionForm.studentLabel,
@@ -103,6 +105,7 @@ const Quran = () => {
   };
 
   const handleExportCSV = async () => {
+    setIsExporting(true);
     try {
       const result = await exportCSV(
         `quran-progress-${getLocalDateStamp()}.csv`,
@@ -114,21 +117,28 @@ const Quran = () => {
       }
     } catch {
       toast({ title: t.export.exportError, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const handleExportPDF = async () => {
-    if (!reportRef.current) return;
+    setIsExporting(true);
     try {
       const result = await exportPDF(
-        reportRef.current,
-        `quran-progress-${getLocalDateStamp()}.pdf`
+        `quran-progress-${getLocalDateStamp()}.pdf`,
+        `${t.export.reportTitle} — ${t.export.quranProgress}`,
+        quranReportHeaders,
+        getQuranReportRows(),
+        { isRTL }
       );
       if (result) {
         toast({ title: t.export.exportSuccess });
       }
     } catch {
       toast({ title: t.export.exportError, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -150,6 +160,7 @@ const Quran = () => {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
+    getPerformanceDistribution().then(setPerfData).catch(console.error);
   }, []);
 
   const handleAddStudent = async (e: React.FormEvent) => {
@@ -301,15 +312,24 @@ const Quran = () => {
       <PageHeader title={t.quran.pageTitle} />
       <main className="container mx-auto px-4 py-12">
         <div className="flex flex-wrap items-center justify-end gap-2 mb-4">
-          <Button variant="outline" size="sm" onClick={handleExportCSV}>
-            <Download className="h-4 w-4 me-1" />
-            {t.export.exportCSV}
+          <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={isExporting}>
+            {isExporting ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
+            {isExporting ? t.export.exporting : t.export.exportCSV}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportPDF}>
-            <FileText className="h-4 w-4 me-1" />
-            {t.export.exportPDF}
+          <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExporting}>
+            {isExporting ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <FileText className="h-4 w-4 me-1" />}
+            {isExporting ? t.export.exporting : t.export.exportPDF}
           </Button>
         </div>
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t.charts.performance.title}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PerformanceBarChart data={perfData} />
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="sessions" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="sessions">{t.quran.tabs.sessions}</TabsTrigger>
@@ -695,13 +715,6 @@ const Quran = () => {
           </TabsContent>
         </Tabs>
       </main>
-
-      <ReportTemplate
-        ref={reportRef}
-        title={`${t.export.reportTitle} — ${t.export.quranProgress}`}
-        headers={quranReportHeaders}
-        rows={getQuranReportRows()}
-      />
     </div>
   );
 };
