@@ -24,7 +24,9 @@ Object.defineProperty(window, "matchMedia", {
 
 // Global test utilities
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Vi {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-empty-object-type
     interface JestAssertion<T = any> extends jest.Matchers<void, T> {}
   }
 }

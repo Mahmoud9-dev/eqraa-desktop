@@ -153,7 +153,8 @@ class PerformanceTestSuite {
       try {
         const stats = await fs.stat(path);
         bundleSize = stats.size;
-      } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
         // File doesn't exist, use mock size
         bundleSize = 500 * 1024; // 500KB mock
       }
@@ -199,7 +200,8 @@ class PerformanceTestSuite {
         });
 
         if (response.ok) successfulRequests++;
-      } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
         results.push({
           time: Infinity,
           status: 0,

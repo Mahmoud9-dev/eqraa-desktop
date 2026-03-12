@@ -5,6 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
 const eslintConfig = [
+  { ignores: ["dist/**", "src-tauri/**", "pkg/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -13,6 +14,9 @@ const eslintConfig = [
       globals: {
         ...globals.node,
       },
+    },
+    rules: {
+      "no-unused-vars": ["error", { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
     },
   },
   {
