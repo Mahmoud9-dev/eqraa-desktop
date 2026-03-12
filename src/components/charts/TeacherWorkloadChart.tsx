@@ -21,7 +21,7 @@ function stripTitles(name: string): string {
   return name;
 }
 
-const CustomYTick = ({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) => {
+const CustomYTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value: string } }) => {
   const name = stripTitles(payload?.value ?? "");
   return (
     <g transform={`translate(${x},${y})`}>

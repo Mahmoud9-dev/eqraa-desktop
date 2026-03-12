@@ -85,7 +85,7 @@ export async function seedDemoData(): Promise<string> {
 
   const db = await getDb();
 
-  // 2. Ensure default teachers exist, then insert 7 new ones
+  // 2. Ensure default teachers exist, then insert 7 new demo teachers
   await getTeachers(); // triggers ensureTeachersSeeded()
 
   const newTeacherIds: string[] = [];
@@ -93,7 +93,7 @@ export async function seedDemoData(): Promise<string> {
     const id = uuid();
     newTeacherIds.push(id);
     await db.execute(
-      "INSERT INTO teachers (id, name, specialization, department, email, phone, experience, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, 1)",
+      "INSERT INTO teachers (id, name, specialization, department, email, phone, experience, is_active, is_demo) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, 1)",
       [id, t.name, t.specialization, t.department, null, null, t.experience]
     );
   }
@@ -107,7 +107,7 @@ export async function seedDemoData(): Promise<string> {
     teachersByDept[t.department]?.push(t.id);
   }
 
-  // 4. Insert 50 students
+  // 4. Insert 50 students (skip departments with no active teachers)
   const studentDepts: Array<{ dept: string; count: number }> = [
     { dept: "quran", count: 20 },
     { dept: "tajweed", count: 15 },
@@ -121,6 +121,11 @@ export async function seedDemoData(): Promise<string> {
   const usedNames = new Set<string>();
 
   for (const { dept, count } of studentDepts) {
+    if (teachersByDept[dept].length === 0) {
+      console.warn(`[seed] No active teachers in department "${dept}", skipping student seeding for this dept.`);
+      continue;
+    }
+
     for (let i = 0; i < count; i++) {
       let name: string;
       do {
@@ -140,8 +145,8 @@ export async function seedDemoData(): Promise<string> {
       studentTeacherMap[id] = teacherId;
 
       await db.execute(
-        `INSERT INTO students (id, name, age, grade, department, teacher_id, parts_memorized, attendance, parent_name, parent_phone, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1)`,
+        `INSERT INTO students (id, name, age, grade, department, teacher_id, parts_memorized, attendance, parent_name, parent_phone, is_active, is_demo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, 1)`,
         [id, name, age, grade, dept, teacherId, partsMem, attendancePct, pick(PARENT_NAMES), null]
       );
     }
@@ -165,7 +170,7 @@ export async function seedDemoData(): Promise<string> {
       const id = uuid();
       const status = pick(statuses);
       await db.execute(
-        "INSERT INTO attendance_records (id, student_id, teacher_id, record_date, status) VALUES ($1, $2, $3, $4, $5)",
+        "INSERT INTO attendance_records (id, student_id, teacher_id, record_date, status, is_demo) VALUES ($1, $2, $3, $4, $5, 1)",
         [id, studentId, studentTeacherMap[studentId], date, status]
       );
       attendanceCount++;
@@ -187,7 +192,7 @@ export async function seedDemoData(): Promise<string> {
       const rating = weightedRating();
 
       await db.execute(
-        "INSERT INTO quran_sessions (id, student_id, teacher_id, session_date, surah_name, verses_from, verses_to, performance_rating) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        "INSERT INTO quran_sessions (id, student_id, teacher_id, session_date, surah_name, verses_from, verses_to, performance_rating, is_demo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1)",
         [id, studentId, studentTeacherMap[studentId], date, surah, versesFrom, versesTo, rating]
       );
       sessionCount++;
@@ -200,17 +205,27 @@ export async function seedDemoData(): Promise<string> {
 export async function clearDemoData(): Promise<string> {
   const db = await getDb();
 
-  // Check if there's any data to clear
-  const students = await db.select<{ count: number }[]>("SELECT COUNT(*) as count FROM students");
-  if (students[0].count === 0) {
+  // Check if there is any demo data to clear
+  const result = await db.select<{ count: number }[]>(
+    "SELECT COUNT(*) as count FROM students WHERE is_demo = 1"
+  );
+  if (result[0].count === 0) {
     return "NO_DATA";
   }
 
-  // Delete in foreign-key-safe order: children first, then parents
-  await db.execute("DELETE FROM quran_sessions");
-  await db.execute("DELETE FROM attendance_records");
-  await db.execute("DELETE FROM students");
-  await db.execute("DELETE FROM teachers");
+  // Delete only demo rows in foreign-key-safe order (children first, then parents),
+  // wrapped in a transaction so partial failures leave the DB consistent.
+  await db.execute("BEGIN");
+  try {
+    await db.execute("DELETE FROM quran_sessions WHERE is_demo = 1");
+    await db.execute("DELETE FROM attendance_records WHERE is_demo = 1");
+    await db.execute("DELETE FROM students WHERE is_demo = 1");
+    await db.execute("DELETE FROM teachers WHERE is_demo = 1");
+    await db.execute("COMMIT");
+  } catch (err) {
+    await db.execute("ROLLBACK");
+    throw err;
+  }
 
   return "CLEARED";
 }

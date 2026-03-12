@@ -71,9 +71,9 @@ export async function exportPDF(
       );
       pdf.text(dateStr, titleX, 22, { align: isRTL ? "right" : "left" });
 
-      // Page number
+      // Page number — use document-level page number, not table-local data.pageNumber
       const pageCount = pdf.getNumberOfPages();
-      const pageNum = data.pageNumber;
+      const pageNum = data.doc.getCurrentPageInfo().pageNumber;
       pdf.setFontSize(8);
       pdf.setTextColor(150, 150, 150);
       pdf.text(

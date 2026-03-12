@@ -280,7 +280,7 @@ const Attendance = () => {
   const filteredAttendanceRecords = (() => {
     const now = new Date();
     const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - PERIOD_DAYS[selectedPeriod]);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
+    const cutoffStr = format(cutoff, "yyyy-MM-dd");
     return attendanceRecords.filter((r) => (r.record_date || r.date || '') >= cutoffStr);
   })();
 

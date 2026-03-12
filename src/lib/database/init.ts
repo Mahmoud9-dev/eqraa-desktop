@@ -1,11 +1,19 @@
 import { getDb } from "./db";
-import { seedDemoData } from "./seed";
 
-let initialized = false;
+// Track the in-flight promise so concurrent callers wait on the same
+// initialization and a failed attempt can be retried on next call.
+let initPromise: Promise<void> | null = null;
 
 export async function initDb(): Promise<void> {
-  if (initialized) return;
-  initialized = true;
-  await getDb();
-  await seedDemoData();
+  if (initPromise) return initPromise;
+
+  initPromise = getDb()
+    .then(() => undefined)
+    .catch((error) => {
+      // Allow retry after a failed initialization attempt
+      initPromise = null;
+      throw error;
+    });
+
+  return initPromise;
 }
