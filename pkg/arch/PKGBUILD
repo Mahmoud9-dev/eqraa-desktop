@@ -1,6 +1,6 @@
 # Maintainer: Mahmoud
 pkgname=eqraa-desktop
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Eqraa Center Hub - Desktop Edition"
 arch=('x86_64')

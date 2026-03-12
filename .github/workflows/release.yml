@@ -86,7 +86,17 @@ jobs:
           releaseName: "Eqraa Desktop ${{ github.ref_name }}"
           args: ${{ matrix.args }}
           releaseBody: |
-            See the assets below to download the installer for your platform.
+            ## What's New in v0.2.0
+
+            ### New Features
+            - Analytics charts added to Home and Teachers views
+            - CSV and PDF export for Students, Attendance, and Quran pages
+            - Auto-seed demo data on first app startup
+
+            ### Bug Fixes
+            - Fixed OOM crash in PDF export by replacing html2canvas with jspdf-autotable
+
+            ---
 
             **Linux:** `.deb` / `.AppImage` / `.pkg.tar.zst` (Arch)
             **Windows:** `.msi` / `.exe`
