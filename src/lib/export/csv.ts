@@ -1,5 +1,5 @@
-import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { showSaveDialog } from "./dialog";
 
 export function generateCSV(headers: string[], rows: string[][]): string {
   const BOM = "\uFEFF";
@@ -16,11 +16,7 @@ export async function exportCSV(
   headers: string[],
   rows: string[][]
 ): Promise<boolean> {
-  const path = await save({
-    title: "Export CSV",
-    defaultPath: filename,
-    filters: [{ name: "CSV", extensions: ["csv"] }],
-  });
+  const path = await showSaveDialog(filename, "CSV", ["csv"]);
   if (!path) return false;
   await writeTextFile(path, generateCSV(headers, rows));
   return true;

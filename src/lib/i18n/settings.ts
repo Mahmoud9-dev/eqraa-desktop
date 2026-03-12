@@ -142,6 +142,26 @@ export interface SettingsTranslations {
       optimizeDb: string;
       healthCheck: string;
     };
+    seed: {
+      title: string;
+      description: string;
+      generate: string;
+      generating: string;
+      successTitle: string;
+      successDescription: string;
+      existsTitle: string;
+      existsDescription: string;
+      errorTitle: string;
+      errorDescription: string;
+      clear: string;
+      clearing: string;
+      clearSuccessTitle: string;
+      clearSuccessDescription: string;
+      clearErrorTitle: string;
+      clearErrorDescription: string;
+      noDataTitle: string;
+      noDataDescription: string;
+    };
   };
   toasts: {
     addSuccess: string;
@@ -374,6 +394,26 @@ export const settings: Record<Language, SettingsTranslations> = {
         optimizeDb: 'تحسين قاعدة البيانات',
         healthCheck: 'فحص سلامة النظام',
       },
+      seed: {
+        title: 'بيانات تجريبية',
+        description: 'توليد بيانات تجريبية لاختبار الرسوم البيانية والتقارير',
+        generate: 'توليد بيانات تجريبية',
+        generating: 'جارٍ التوليد...',
+        successTitle: 'تم التوليد',
+        successDescription: 'تم توليد البيانات التجريبية بنجاح',
+        existsTitle: 'بيانات موجودة',
+        existsDescription: 'البيانات التجريبية موجودة مسبقاً',
+        errorTitle: 'خطأ',
+        errorDescription: 'فشل توليد البيانات التجريبية',
+        clear: 'حذف البيانات التجريبية',
+        clearing: 'جارٍ الحذف...',
+        clearSuccessTitle: 'تم الحذف',
+        clearSuccessDescription: 'تم حذف البيانات التجريبية بنجاح',
+        clearErrorTitle: 'خطأ',
+        clearErrorDescription: 'فشل حذف البيانات التجريبية',
+        noDataTitle: 'لا توجد بيانات',
+        noDataDescription: 'لا توجد بيانات تجريبية للحذف',
+      },
     },
     toasts: {
       addSuccess: 'تم الإضافة',
@@ -603,6 +643,26 @@ export const settings: Record<Language, SettingsTranslations> = {
         rebuildIndexes: 'Rebuild Indexes',
         optimizeDb: 'Optimize Database',
         healthCheck: 'System Health Check',
+      },
+      seed: {
+        title: 'Demo Data',
+        description: 'Generate demo data for testing charts and reports',
+        generate: 'Generate Demo Data',
+        generating: 'Generating...',
+        successTitle: 'Generated',
+        successDescription: 'Demo data generated successfully',
+        existsTitle: 'Data Exists',
+        existsDescription: 'Demo data already exists',
+        errorTitle: 'Error',
+        errorDescription: 'Failed to generate demo data',
+        clear: 'Delete Demo Data',
+        clearing: 'Deleting...',
+        clearSuccessTitle: 'Deleted',
+        clearSuccessDescription: 'Demo data deleted successfully',
+        clearErrorTitle: 'Error',
+        clearErrorDescription: 'Failed to delete demo data',
+        noDataTitle: 'No Data',
+        noDataDescription: 'No demo data to delete',
       },
     },
     toasts: {

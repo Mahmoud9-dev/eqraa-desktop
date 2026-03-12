@@ -143,6 +143,21 @@ export async function getDb(): Promise<Database> {
     await db.execute(stmt);
   }
 
+  // Add is_demo column to tables that need it (idempotent: ignore error if column exists)
+  const demoColumnMigrations = [
+    "ALTER TABLE teachers ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE students ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE attendance_records ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE quran_sessions ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0",
+  ];
+  for (const stmt of demoColumnMigrations) {
+    try {
+      await db.execute(stmt);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
+
   return db;
 }
 

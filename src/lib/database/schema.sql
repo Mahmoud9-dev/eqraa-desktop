@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS teachers (
   specialization TEXT NOT NULL,
   department TEXT NOT NULL CHECK (department IN ('quran', 'tajweed', 'tarbawi')),
   is_active INTEGER DEFAULT 1,
+  is_demo INTEGER NOT NULL DEFAULT 0,
   email TEXT,
   phone TEXT,
   experience INTEGER,
@@ -30,6 +31,7 @@ CREATE TABLE IF NOT EXISTS students (
   current_progress TEXT,
   previous_progress TEXT,
   is_active INTEGER DEFAULT 1,
+  is_demo INTEGER NOT NULL DEFAULT 0,
   parent_name TEXT,
   parent_phone TEXT,
   attendance INTEGER DEFAULT 0,
@@ -51,6 +53,7 @@ CREATE TABLE IF NOT EXISTS quran_sessions (
   performance_rating INTEGER CHECK (performance_rating >= 1 AND performance_rating <= 10),
   notes TEXT,
   attendance INTEGER DEFAULT 1,
+  is_demo INTEGER NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -126,6 +129,7 @@ CREATE TABLE IF NOT EXISTS attendance_records (
   record_date TEXT NOT NULL DEFAULT (date('now')),
   status TEXT NOT NULL CHECK (status IN ('حاضر', 'غائب', 'مأذون')),
   notes TEXT,
+  is_demo INTEGER NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
 

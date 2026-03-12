@@ -48,6 +48,8 @@ import {
   updateTeacher,
   deleteTeacher as dbDeleteTeacher,
 } from "@/lib/database/repositories/teachers";
+import TeacherWorkloadChart from "@/components/charts/TeacherWorkloadChart";
+import { getTeacherWorkload, type TeacherWorkloadRow } from "@/lib/database/repositories/stats";
 
 const Teachers = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,6 +65,7 @@ const Teachers = () => {
   const { t, tFunc } = useLanguage();
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [workloadData, setWorkloadData] = useState<TeacherWorkloadRow[]>([]);
 
   const loadTeachers = async () => {
     try {
@@ -85,7 +88,9 @@ const Teachers = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTeachers();
+    getTeacherWorkload().then(setWorkloadData).catch(console.error);
   }, []);
 
   // Extended teacher data for display
@@ -307,6 +312,15 @@ const Teachers = () => {
           <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
             {t.teachers.sectionDescription}
           </p>
+
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">{t.charts.workload.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TeacherWorkloadChart data={workloadData} />
+            </CardContent>
+          </Card>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-4 space-x-0 sm:space-x-4 space-x-reverse">

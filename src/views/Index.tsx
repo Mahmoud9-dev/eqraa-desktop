@@ -24,9 +24,16 @@ import { LucideIcon } from 'lucide-react';
 import IconButton from '@/components/IconButton';
 import PageHeader from '@/components/PageHeader';
 import StatCard from '@/components/StatCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useHomeStats } from '@/hooks/useHomeStats';
+import { useChartStats } from '@/hooks/useChartStats';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatNumber } from '@/lib/i18n';
+import AttendanceTrendChart from '@/components/charts/AttendanceTrendChart';
+import DepartmentPieChart from '@/components/charts/DepartmentPieChart';
+import PerformanceBarChart from '@/components/charts/PerformanceBarChart';
+import TeacherWorkloadChart from '@/components/charts/TeacherWorkloadChart';
 
 interface Section {
   to: string;
@@ -56,6 +63,7 @@ const sections: Section[] = [
 
 const Index = () => {
   const { data: stats, isLoading: statsLoading } = useHomeStats();
+  const { data: chartStats, isLoading: chartsLoading } = useChartStats();
   const { t, languageMeta } = useLanguage();
 
   return (
@@ -107,6 +115,67 @@ const Index = () => {
             value={formatNumber(stats?.upcomingExams ?? 0, languageMeta.code)}
             loading={statsLoading}
           />
+        </div>
+
+        {/* Charts Section */}
+        <div className="mb-8 sm:mb-10">
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-4">
+            {t.charts.sectionTitle}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">{t.charts.attendance.title}</CardTitle>
+                <p className="text-xs text-muted-foreground">{t.charts.attendance.last30Days}</p>
+              </CardHeader>
+              <CardContent>
+                {chartsLoading ? (
+                  <Skeleton className="h-[250px] w-full rounded-lg" />
+                ) : (
+                  <AttendanceTrendChart data={chartStats?.attendanceTrend ?? []} />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">{t.charts.departments.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartsLoading ? (
+                  <Skeleton className="h-[250px] w-full rounded-lg" />
+                ) : (
+                  <DepartmentPieChart data={chartStats?.departmentDistribution ?? []} />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">{t.charts.performance.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartsLoading ? (
+                  <Skeleton className="h-[250px] w-full rounded-lg" />
+                ) : (
+                  <PerformanceBarChart data={chartStats?.performanceDistribution ?? []} />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">{t.charts.workload.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartsLoading ? (
+                  <Skeleton className="h-[250px] w-full rounded-lg" />
+                ) : (
+                  <TeacherWorkloadChart data={chartStats?.teacherWorkload ?? []} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Navigation Grid */}

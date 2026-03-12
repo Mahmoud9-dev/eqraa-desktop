@@ -6,6 +6,7 @@ export interface ExportTranslations {
   exportSuccess: string;
   exportError: string;
   exportCancelled: string;
+  exporting: string;
   reportTitle: string;
   generatedOn: string;
   students: string;
@@ -20,6 +21,7 @@ export const exportI18n: Record<Language, ExportTranslations> = {
     exportSuccess: 'تم التصدير بنجاح',
     exportError: 'حدث خطأ أثناء التصدير',
     exportCancelled: 'تم إلغاء التصدير',
+    exporting: 'جاري التصدير...',
     reportTitle: 'تقرير',
     generatedOn: 'تاريخ التقرير',
     students: 'الطلاب',
@@ -32,6 +34,7 @@ export const exportI18n: Record<Language, ExportTranslations> = {
     exportSuccess: 'Exported successfully',
     exportError: 'An error occurred during export',
     exportCancelled: 'Export cancelled',
+    exporting: 'Exporting...',
     reportTitle: 'Report',
     generatedOn: 'Generated on',
     students: 'Students',

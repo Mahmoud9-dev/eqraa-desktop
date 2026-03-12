@@ -21,11 +21,14 @@ import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { exportDatabase, importDatabase } from "@/lib/database/backup";
+import { seedDemoData, clearDemoData } from "@/lib/database/seed";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("settings");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const { toast } = useToast();
   const { t, language, toggleLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
@@ -48,6 +51,56 @@ const Settings = () => {
       });
     }
     setIsExporting(false);
+  };
+
+  const handleSeed = async () => {
+    setIsSeeding(true);
+    try {
+      const result = await seedDemoData();
+      if (result === "DATA_EXISTS") {
+        toast({
+          title: t.settings.system.seed.existsTitle,
+          description: t.settings.system.seed.existsDescription,
+        });
+      } else {
+        toast({
+          title: t.settings.system.seed.successTitle,
+          description: t.settings.system.seed.successDescription,
+        });
+      }
+    } catch {
+      toast({
+        title: t.settings.system.seed.errorTitle,
+        description: t.settings.system.seed.errorDescription,
+        variant: "destructive",
+      });
+    }
+    setIsSeeding(false);
+  };
+
+  const handleClearSeed = async () => {
+    setIsClearing(true);
+    try {
+      const result = await clearDemoData();
+      if (result === "NO_DATA") {
+        toast({
+          title: t.settings.system.seed.noDataTitle,
+          description: t.settings.system.seed.noDataDescription,
+        });
+      } else {
+        toast({
+          title: t.settings.system.seed.clearSuccessTitle,
+          description: t.settings.system.seed.clearSuccessDescription,
+        });
+      }
+    } catch {
+      toast({
+        title: t.settings.system.seed.clearErrorTitle,
+        description: t.settings.system.seed.clearErrorDescription,
+        variant: "destructive",
+      });
+    }
+    setIsClearing(false);
   };
 
   const handleImport = async () => {
@@ -183,6 +236,37 @@ const Settings = () => {
                       {isImporting ? "..." : t.settings.system.backup.restore}
                     </Button>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t.settings.system.seed.title}</CardTitle>
+                  <CardDescription>
+                    {t.settings.system.seed.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleSeed}
+                    disabled={isSeeding || isClearing}
+                  >
+                    {isSeeding
+                      ? t.settings.system.seed.generating
+                      : t.settings.system.seed.generate}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleClearSeed}
+                    disabled={isClearing || isSeeding}
+                  >
+                    {isClearing
+                      ? t.settings.system.seed.clearing
+                      : t.settings.system.seed.clear}
+                  </Button>
                 </CardContent>
               </Card>
             </div>

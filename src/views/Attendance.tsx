@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Download, FileText, Search } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CalendarIcon, Download, FileText, Loader2, Search } from "lucide-react";
+import AttendanceTrendChart from "@/components/charts/AttendanceTrendChart";
+import { getAttendanceTrend, type AttendanceTrendRow } from "@/lib/database/repositories/stats";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { getStudents as fetchStudents } from "@/lib/database/repositories/students";
@@ -41,7 +44,6 @@ import {
 import type { Student as DbStudent } from "@/lib/database/repositories/students";
 import type { Teacher as DbTeacher } from "@/lib/database/repositories/teachers";
 import type { AttendanceRecord as DbAttendanceRecord } from "@/lib/database/repositories/attendance";
-import ReportTemplate from "@/components/ReportTemplate";
 import { exportCSV } from "@/lib/export/csv";
 import { exportPDF } from "@/lib/export/pdf";
 import { formatDate } from "@/lib/i18n";
@@ -90,6 +92,11 @@ interface AttendanceRecord {
   teacher?: Teacher;
 }
 
+type AttendancePeriod = 'day' | 'week' | 'month' | 'threeMonths' | 'year';
+const PERIOD_DAYS: Record<AttendancePeriod, number> = {
+  day: 1, week: 7, month: 30, threeMonths: 90, year: 365,
+};
+
 const Attendance = () => {
   const [activeTab, setActiveTab] = useState("students");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -104,10 +111,12 @@ const Attendance = () => {
     [key: string]: "حاضر" | "غائب" | "إجازة";
   }>({});
   const { toast } = useToast();
-  const { t, tFunc, language } = useLanguage();
+  const { t, tFunc, language, isRTL } = useLanguage();
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [trendData, setTrendData] = useState<AttendanceTrendRow[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<AttendancePeriod>('month');
 
   // Label map for DB attendance status values
   const statusLabels: Record<string, string> = {
@@ -125,7 +134,7 @@ const Attendance = () => {
 
   // date-fns locale based on current language
   const dateLocale = language === 'ar' ? ar : undefined;
-  const reportRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const attendanceReportHeaders = [
     t.attendance.table.studentName,
@@ -140,7 +149,7 @@ const Attendance = () => {
   };
 
   const getAttendanceReportRows = () =>
-    attendanceRecords.map((r) => {
+    filteredAttendanceRecords.map((r) => {
       const studentName = getStudentName(r.student_id || r.studentId);
       const teacherName = getTeacherName(r.teacher_id || r.teacherId);
       const name = studentName !== "-" ? studentName : teacherName;
@@ -153,6 +162,7 @@ const Attendance = () => {
     });
 
   const handleExportCSV = async () => {
+    setIsExporting(true);
     try {
       const result = await exportCSV(
         `attendance-${getLocalDateStamp()}.csv`,
@@ -162,23 +172,32 @@ const Attendance = () => {
       if (result) {
         toast({ title: t.export.exportSuccess });
       }
-    } catch {
+    } catch (err) {
+      console.error("CSV export error:", err);
       toast({ title: t.export.exportError, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const handleExportPDF = async () => {
-    if (!reportRef.current) return;
+    setIsExporting(true);
     try {
       const result = await exportPDF(
-        reportRef.current,
-        `attendance-${getLocalDateStamp()}.pdf`
+        `attendance-${getLocalDateStamp()}.pdf`,
+        `${t.export.reportTitle} — ${t.export.attendance}`,
+        attendanceReportHeaders,
+        getAttendanceReportRows(),
+        { isRTL }
       );
       if (result) {
         toast({ title: t.export.exportSuccess });
       }
-    } catch {
+    } catch (err) {
+      console.error("PDF export error:", err);
       toast({ title: t.export.exportError, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -244,6 +263,11 @@ const Attendance = () => {
     loadData();
   }, [loadStudents, loadTeachers, loadAttendanceRecords]);
 
+  // Reload trend data when period changes
+  useEffect(() => {
+    getAttendanceTrend(PERIOD_DAYS[selectedPeriod]).then(setTrendData).catch(console.error);
+  }, [selectedPeriod]);
+
   const filteredStudents = students.filter((student) => {
     const matchesSearch = student.name
       .toLowerCase()
@@ -252,6 +276,13 @@ const Attendance = () => {
       filterDepartment === "all" || student.department === filterDepartment;
     return matchesSearch && matchesDepartment;
   });
+
+  const filteredAttendanceRecords = (() => {
+    const now = new Date();
+    const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - PERIOD_DAYS[selectedPeriod]);
+    const cutoffStr = format(cutoff, "yyyy-MM-dd");
+    return attendanceRecords.filter((r) => (r.record_date || r.date || '') >= cutoffStr);
+  })();
 
   const getDepartmentName = (dept: string) => {
     return departmentLabels[dept] || dept;
@@ -431,13 +462,13 @@ const Attendance = () => {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
             <h2 className="text-2xl font-bold">{t.attendance.sectionTitle}</h2>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="h-4 w-4 me-1" />
-                {t.export.exportCSV}
+              <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={isExporting}>
+                {isExporting ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
+                {isExporting ? t.export.exporting : t.export.exportCSV}
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                <FileText className="h-4 w-4 me-1" />
-                {t.export.exportPDF}
+              <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExporting}>
+                {isExporting ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <FileText className="h-4 w-4 me-1" />}
+                {isExporting ? t.export.exporting : t.export.exportPDF}
               </Button>
             </div>
           </div>
@@ -445,6 +476,32 @@ const Attendance = () => {
             {t.attendance.sectionDescription}
           </p>
         </div>
+
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-sm font-medium">{t.charts.attendance.title}</CardTitle>
+                <p className="text-xs text-muted-foreground">{t.charts.periods[selectedPeriod]}</p>
+              </div>
+              <ToggleGroup
+                type="single"
+                value={selectedPeriod}
+                onValueChange={(v) => { if (v) setSelectedPeriod(v as AttendancePeriod); }}
+                className="gap-1"
+              >
+                {(Object.keys(PERIOD_DAYS) as AttendancePeriod[]).map((key) => (
+                  <ToggleGroupItem key={key} value={key} size="sm" className="text-xs px-3">
+                    {t.charts.periods[key]}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <AttendanceTrendChart data={trendData} />
+          </CardContent>
+        </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
@@ -615,7 +672,7 @@ const Attendance = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {attendanceRecords.map((record) => (
+                      {filteredAttendanceRecords.map((record) => (
                         <TableRow key={record.id}>
                           <TableCell>{record.date || record.record_date}</TableCell>
                           <TableCell>{getStudentName(record.studentId || record.student_id)}</TableCell>
@@ -797,13 +854,6 @@ const Attendance = () => {
           </TabsContent>
         </Tabs>
       </main>
-
-      <ReportTemplate
-        ref={reportRef}
-        title={`${t.export.reportTitle} — ${t.export.attendance}`}
-        headers={attendanceReportHeaders}
-        rows={getAttendanceReportRows()}
-      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -37,11 +37,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PageHeader from "@/components/PageHeader";
-import ReportTemplate from "@/components/ReportTemplate";
 import { exportCSV } from "@/lib/export/csv";
 import { exportPDF } from "@/lib/export/pdf";
 import { Department, StudentGrade } from "@/types";
@@ -59,6 +58,8 @@ import {
   deleteStudentNote,
 } from "@/lib/database/repositories/student-notes";
 import { getTeachers, type Teacher } from "@/lib/database/repositories/teachers";
+import DepartmentPieChart from "@/components/charts/DepartmentPieChart";
+import { getStudentsByDepartment, type DepartmentCountRow } from "@/lib/database/repositories/stats";
 
 // Local Student interface that extends SQLite data with parsed images and camelCase aliases
 interface Student extends StudentWithTeacher {
@@ -125,6 +126,7 @@ const Students = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
   const [teachersList, setTeachersList] = useState<Teacher[]>([]);
+  const [deptData, setDeptData] = useState<DepartmentCountRow[]>([]);
 
   // Load students from SQLite on mount
   const loadStudents = useCallback(async () => {
@@ -165,6 +167,7 @@ const Students = () => {
   useEffect(() => {
     loadStudents();
     getTeachers().then(setTeachersList).catch(console.error);
+    getStudentsByDepartment().then(setDeptData).catch(console.error);
   }, [loadStudents]);
 
   // Mock grades and notes data
@@ -260,8 +263,8 @@ const Students = () => {
     },
   });
   const { toast } = useToast();
-  const { t } = useLanguage();
-  const reportRef = useRef<HTMLDivElement>(null);
+  const { t, isRTL } = useLanguage();
+  const [isExporting, setIsExporting] = useState(false);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
@@ -314,6 +317,7 @@ const Students = () => {
   };
 
   const handleExportCSV = async () => {
+    setIsExporting(true);
     try {
       const result = await exportCSV(
         `students-${getLocalDateStamp()}.csv`,
@@ -325,21 +329,28 @@ const Students = () => {
       }
     } catch {
       toast({ title: t.export.exportError, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const handleExportPDF = async () => {
-    if (!reportRef.current) return;
+    setIsExporting(true);
     try {
       const result = await exportPDF(
-        reportRef.current,
-        `students-${getLocalDateStamp()}.pdf`
+        `students-${getLocalDateStamp()}.pdf`,
+        `${t.export.reportTitle} — ${t.export.students}`,
+        studentReportHeaders,
+        getStudentReportRows(),
+        { isRTL }
       );
       if (result) {
         toast({ title: t.export.exportSuccess });
       }
     } catch {
       toast({ title: t.export.exportError, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -771,6 +782,15 @@ const Students = () => {
             {t.students.sectionDescription}
           </p>
 
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">{t.charts.departments.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DepartmentPieChart data={deptData} />
+            </CardContent>
+          </Card>
+
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-4 space-x-0 sm:space-x-4 space-x-reverse">
               <Input
@@ -797,13 +817,13 @@ const Students = () => {
               </Select>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="h-4 w-4 me-1" />
-                {t.export.exportCSV}
+              <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={isExporting}>
+                {isExporting ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Download className="h-4 w-4 me-1" />}
+                {isExporting ? t.export.exporting : t.export.exportCSV}
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                <FileText className="h-4 w-4 me-1" />
-                {t.export.exportPDF}
+              <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExporting}>
+                {isExporting ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <FileText className="h-4 w-4 me-1" />}
+                {isExporting ? t.export.exporting : t.export.exportPDF}
               </Button>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -2041,12 +2061,6 @@ const Students = () => {
         </DialogContent>
       </Dialog>
 
-      <ReportTemplate
-        ref={reportRef}
-        title={`${t.export.reportTitle} — ${t.export.students}`}
-        headers={studentReportHeaders}
-        rows={getStudentReportRows()}
-      />
     </div>
   );
 };
