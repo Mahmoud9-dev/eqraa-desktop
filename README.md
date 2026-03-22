@@ -1,13 +1,15 @@
 # Eqraa Desktop (إقراء)
 
 > Desktop management system for Islamic educational centers and Quran memorization institutions.
-<img width="1280" height="656" alt="image" src="https://github.com/user-attachments/assets/73417ddb-8d80-44c6-967c-3eb27ac26477" />
+
+<img width="2544" height="1331" alt="Screenshot_٢٠٢٦٠٢١٨_١٧٣٠٣٤" src="https://github.com/user-attachments/assets/a4388cd2-efbc-4162-89ec-353ac66df8a5" />
 
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8D8?style=flat-square&logo=tauri)](https://v2.tauri.app/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-Local-003B57?style=flat-square&logo=sqlite)](https://www.sqlite.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+<img width="2559" height="1372" alt="image" src="https://github.com/user-attachments/assets/3a7fcf0e-0ff5-414e-9fd5-7315a73f7520" />
 
 ---
 
@@ -26,6 +28,7 @@ Bilingual interface: Arabic (RTL) and English (LTR).
 - Attendance tracking
 - Class schedules
 - Exams
+<img width="2554" height="1334" alt="image" src="https://github.com/user-attachments/assets/2344ed18-70af-49a6-b7f4-b0da1f0ed696" />
 
 **Quran & Islamic Education**
 - Quran memorization progress tracking
@@ -33,6 +36,7 @@ Bilingual interface: Arabic (RTL) and English (LTR).
 - Quran circles management
 - Islamic lessons, ethics & behavior, life skills
 - Family programs, guidance & counseling
+<img width="2554" height="1334" alt="image" src="https://github.com/user-attachments/assets/56c43523-2db9-4a1e-8e4f-fda2275830a1" />
 
 **Communication & Administration**
 - Announcements
