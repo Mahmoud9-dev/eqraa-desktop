@@ -1,4 +1,6 @@
 import { getDb, uuid } from "../db";
+import { PaginationParams, paginationClause, computeTotalPages } from "@/lib/database/pagination";
+import type { PaginatedResponse } from "@/types";
 
 export interface EducationalSession {
   id: string;
@@ -49,4 +51,32 @@ export async function addEducationalSession(session: {
       session.performance_rating ?? null,
     ]
   );
+}
+
+export async function getEducationalSessionsPaginated(
+  params: PaginationParams
+): Promise<PaginatedResponse<EducationalSessionWithNames>> {
+  const db = await getDb();
+  const { clause } = paginationClause(params);
+
+  const countResult = await db.select<[{ count: number }]>(
+    "SELECT COUNT(*) as count FROM educational_sessions"
+  );
+  const total = countResult[0].count;
+
+  const data = await db.select<EducationalSessionWithNames[]>(
+    `SELECT es.*, s.name as student_name, t.name as teacher_name
+     FROM educational_sessions es
+     LEFT JOIN students s ON es.student_id = s.id
+     LEFT JOIN teachers t ON es.teacher_id = t.id
+     ORDER BY es.session_date DESC ${clause}`
+  );
+
+  return {
+    data,
+    total,
+    page: params.page,
+    pageSize: params.pageSize,
+    totalPages: computeTotalPages(total, params.pageSize),
+  };
 }

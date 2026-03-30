@@ -39,8 +39,10 @@ import { getStudents as fetchStudents } from "@/lib/database/repositories/studen
 import { getTeachers as fetchTeachers } from "@/lib/database/repositories/teachers";
 import {
   getAttendanceRecords as fetchAttendanceRecords,
+  getAttendanceRecordsPaginated,
   insertAttendanceRecords,
 } from "@/lib/database/repositories/attendance";
+import { usePagination } from "@/hooks/usePagination";
 import type { Student as DbStudent } from "@/lib/database/repositories/students";
 import type { Teacher as DbTeacher } from "@/lib/database/repositories/teachers";
 import type { AttendanceRecord as DbAttendanceRecord } from "@/lib/database/repositories/attendance";
@@ -117,6 +119,9 @@ const Attendance = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [trendData, setTrendData] = useState<AttendanceTrendRow[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<AttendancePeriod>('month');
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { page, pageSize, nextPage, prevPage, goToPage, resetPage } = usePagination({ initialPageSize: 50 });
 
   // Label map for DB attendance status values
   const statusLabels: Record<string, string> = {
@@ -236,11 +241,11 @@ const Attendance = () => {
     }
   }, []);
 
-  // Load attendance records from SQLite
+  // Load attendance records from SQLite (paginated)
   const loadAttendanceRecords = useCallback(async () => {
     try {
-      const records = await fetchAttendanceRecords();
-      const transformedRecords: AttendanceRecord[] = records.map((r) => ({
+      const result = await getAttendanceRecordsPaginated({ page, pageSize });
+      const transformedRecords: AttendanceRecord[] = result.data.map((r) => ({
         ...r,
         studentId: r.student_id || "",
         teacherId: r.teacher_id || "",
@@ -248,10 +253,12 @@ const Attendance = () => {
         status: r.status as "حاضر" | "غائب" | "مأذون",
       }));
       setAttendanceRecords(transformedRecords);
+      setTotalRecords(result.total);
+      setTotalPages(result.totalPages);
     } catch (error) {
       console.error("Error loading attendance records:", error);
     }
-  }, []);
+  }, [page, pageSize]);
 
   // Load all data on mount
   useEffect(() => {
@@ -694,6 +701,38 @@ const Attendance = () => {
                       ))}
                     </TableBody>
                   </Table>
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4">
+                      <p className="text-sm text-muted-foreground">
+                        {t.common.showingResults
+                          .replace('{count}', String(attendanceRecords.length))
+                          .replace('{total}', String(totalRecords))}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={prevPage}
+                          disabled={page <= 1}
+                        >
+                          {t.common.previous}
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          {t.common.pageOf
+                            .replace('{page}', String(page))
+                            .replace('{totalPages}', String(totalPages))}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={nextPage}
+                          disabled={page >= totalPages}
+                        >
+                          {t.common.next}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

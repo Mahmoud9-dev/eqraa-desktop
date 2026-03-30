@@ -24,13 +24,13 @@ export interface StudentWithTeacher extends Student {
 
 export async function getStudents(): Promise<Student[]> {
   const db = await getDb();
-  return db.select<Student[]>("SELECT * FROM students ORDER BY name");
+  return db.select<Student[]>("SELECT * FROM students ORDER BY name LIMIT 500");
 }
 
 export async function getActiveStudents(): Promise<Student[]> {
   const db = await getDb();
   return db.select<Student[]>(
-    "SELECT * FROM students WHERE is_active = 1 ORDER BY name"
+    "SELECT * FROM students WHERE is_active = 1 ORDER BY name LIMIT 500"
   );
 }
 
@@ -41,7 +41,7 @@ export async function getStudentsByDept(department: string): Promise<StudentWith
      FROM students s
      LEFT JOIN teachers t ON s.teacher_id = t.id
      WHERE s.department = $1
-     ORDER BY s.name`,
+     ORDER BY s.name LIMIT 500`,
     [department]
   );
 }
@@ -52,7 +52,7 @@ export async function getStudentsWithTeachers(): Promise<StudentWithTeacher[]> {
     `SELECT s.*, t.name as teacher_name
      FROM students s
      LEFT JOIN teachers t ON s.teacher_id = t.id
-     ORDER BY s.name`
+     ORDER BY s.name LIMIT 500`
   );
 }
 

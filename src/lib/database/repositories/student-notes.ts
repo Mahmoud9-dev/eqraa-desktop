@@ -1,4 +1,6 @@
 import { getDb, uuid } from "../db";
+import { PaginationParams, paginationClause, computeTotalPages } from "@/lib/database/pagination";
+import type { PaginatedResponse } from "@/types";
 
 export interface StudentNote {
   id: string;
@@ -75,4 +77,28 @@ export async function getAllStudentNotes(): Promise<StudentNote[]> {
   return db.select<StudentNote[]>(
     "SELECT * FROM student_notes ORDER BY note_date DESC"
   );
+}
+
+export async function getAllStudentNotesPaginated(
+  params: PaginationParams
+): Promise<PaginatedResponse<StudentNote>> {
+  const db = await getDb();
+  const { clause } = paginationClause(params);
+
+  const countResult = await db.select<[{ count: number }]>(
+    "SELECT COUNT(*) as count FROM student_notes"
+  );
+  const total = countResult[0].count;
+
+  const data = await db.select<StudentNote[]>(
+    `SELECT * FROM student_notes ORDER BY note_date DESC ${clause}`
+  );
+
+  return {
+    data,
+    total,
+    page: params.page,
+    pageSize: params.pageSize,
+    totalPages: computeTotalPages(total, params.pageSize),
+  };
 }

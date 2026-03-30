@@ -304,12 +304,14 @@ describe("Utility Types", () => {
         total: 1,
         page: 1,
         pageSize: 10,
+        totalPages: 1,
       };
 
       expect(Array.isArray(paginatedResponse.data)).toBe(true);
       expect(paginatedResponse.total).toBe(1);
       expect(paginatedResponse.page).toBe(1);
       expect(paginatedResponse.pageSize).toBe(10);
+      expect(paginatedResponse.totalPages).toBe(1);
     });
   });
 });
