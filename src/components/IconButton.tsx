@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from 'react-router-dom';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,7 +17,7 @@ interface IconButtonProps {
   'aria-label'?: string;
 }
 
-const IconButton = ({
+const IconButton = memo(({
   to,
   href,
   icon: Icon,
@@ -99,6 +100,8 @@ const IconButton = ({
       {content}
     </button>
   );
-};
+});
+
+IconButton.displayName = "IconButton";
 
 export default IconButton;

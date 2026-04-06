@@ -1,4 +1,5 @@
 
+import { memo } from "react";
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -12,7 +13,7 @@ interface StatCardProps {
   className?: string;
 }
 
-const StatCard = ({
+const StatCard = memo(({
   icon: Icon,
   iconBgColor,
   iconColor,
@@ -50,6 +51,8 @@ const StatCard = ({
       </div>
     </div>
   );
-};
+});
+
+StatCard.displayName = "StatCard";
 
 export default StatCard;

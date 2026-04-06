@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -14,7 +15,7 @@ interface Props {
   data: AttendanceTrendRow[];
 }
 
-export default function AttendanceTrendChart({ data }: Props) {
+const AttendanceTrendChart = memo(({ data }: Props) => {
   const { t } = useLanguage();
 
   if (data.length === 0) {
@@ -72,4 +73,8 @@ export default function AttendanceTrendChart({ data }: Props) {
       </ChartContainer>
     </div>
   );
-}
+});
+
+AttendanceTrendChart.displayName = "AttendanceTrendChart";
+
+export default AttendanceTrendChart;

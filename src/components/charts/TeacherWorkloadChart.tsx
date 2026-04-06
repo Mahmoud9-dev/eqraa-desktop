@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -32,7 +33,7 @@ const CustomYTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payloa
   );
 };
 
-export default function TeacherWorkloadChart({ data }: Props) {
+const TeacherWorkloadChart = memo(({ data }: Props) => {
   const { t } = useLanguage();
 
   if (data.length === 0) {
@@ -68,4 +69,8 @@ export default function TeacherWorkloadChart({ data }: Props) {
       </ChartContainer>
     </div>
   );
-}
+});
+
+TeacherWorkloadChart.displayName = "TeacherWorkloadChart";
+
+export default TeacherWorkloadChart;

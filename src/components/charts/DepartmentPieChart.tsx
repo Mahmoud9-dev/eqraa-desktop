@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Pie, PieChart } from "recharts";
 import {
   ChartContainer,
@@ -20,7 +21,7 @@ const DEPT_COLORS: Record<string, string> = {
   tarbawi: "#06b6d4",
 };
 
-export default function DepartmentPieChart({ data }: Props) {
+const DepartmentPieChart = memo(({ data }: Props) => {
   const { t } = useLanguage();
 
   if (data.length === 0) {
@@ -68,4 +69,8 @@ export default function DepartmentPieChart({ data }: Props) {
       </ChartContainer>
     </div>
   );
-}
+});
+
+DepartmentPieChart.displayName = "DepartmentPieChart";
+
+export default DepartmentPieChart;
