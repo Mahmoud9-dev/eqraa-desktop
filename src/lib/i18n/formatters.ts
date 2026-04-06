@@ -35,6 +35,15 @@ export function formatDateShort(value: Date | string | number, language: Languag
 }
 
 /**
+ * Format a Date as an ISO date string (yyyy-MM-dd).
+ * Replaces date-fns `format(date, "yyyy-MM-dd")`.
+ * @example formatDateISO(new Date(2026, 0, 15)) → "2026-01-15"
+ */
+export function formatDateISO(date: Date): string {
+  return date.toISOString().split("T")[0];
+}
+
+/**
  * Format a date value as a localized time string.
  */
 export function formatTime(value: Date | string | number, language: Language): string {

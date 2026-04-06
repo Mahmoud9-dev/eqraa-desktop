@@ -3,6 +3,7 @@ import { ReactElement, ReactNode } from "react";
 import { vi, expect } from "vitest";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -20,13 +21,15 @@ const AllTheProviders = ({ children }: AllTheProvidersProps) => {
       enableSystem
       disableTransitionOnChange
     >
-      <TooltipProvider>
-        <BrowserRouter>
-          {children}
-          <Toaster />
-          <Sonner />
-        </BrowserRouter>
-      </TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <BrowserRouter>
+            {children}
+            <Toaster />
+            <Sonner />
+          </BrowserRouter>
+        </TooltipProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 };

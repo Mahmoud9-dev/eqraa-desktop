@@ -388,6 +388,115 @@ export interface StudentGrade {
   status: string;
 }
 
+
+/**
+ * Tarbiwi program interface
+ * Represents educational (tarbawi) programs for Islamic values and behavior
+ */
+export interface TarbiwiProgram {
+  id: string;
+  title: string;
+  description: string;
+  dayOfWeek: number;
+  time: string;
+  duration: number;
+  targetAge: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+/**
+ * Tarbiwi assignment interface
+ * Represents behavioral and worship-based assignments
+ */
+export interface TarbiwiAssignment {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  dueDate: Date;
+  targetAge: string;
+  points: number;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+/**
+ * Schedule session interface
+ * Represents a session within a weekly schedule day
+ */
+export interface ScheduleSession {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  teacherId: string;
+  location: string;
+  type: string;
+  subjectId: string;
+  isActive: boolean;
+  dayOfWeek?: number;
+}
+
+/**
+ * Educational lesson interface
+ * Shared shape for ethics, Islamic lessons, and life skills sub-pages
+ */
+export interface EducationalLesson {
+  id: string;
+  title: string;
+  description: string;
+  teacher: string;
+  date: string;
+  duration: string;
+  recording: string;
+  verses: string;
+}
+
+/**
+ * Family program interface
+ * Represents family-oriented educational programs
+ */
+export interface FamilyProgram {
+  id: string;
+  title: string;
+  description: string;
+  teacher: string;
+  date: string;
+  duration: string;
+  recording: string;
+  verses: string;
+}
+
+/**
+ * Counseling session interface
+ * Represents guidance and counseling sessions
+ */
+export interface CounselingSession {
+  id: string;
+  title: string;
+  description: string;
+  teacher: string;
+  date: string;
+  duration: string;
+  recording: string;
+  verses: string;
+}
+
+/**
+ * Student activity interface
+ * Represents student activities and competitions
+ */
+export interface StudentActivity {
+  id: string;
+  title: string;
+  description: string;
+  teacher: string;
+  date: string;
+  duration: string;
+  recording: string;
+  verses: string;
+}
 // Utility types for API responses
 export interface ApiResponse<T> {
   data: T;

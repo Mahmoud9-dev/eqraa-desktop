@@ -9,6 +9,7 @@ import {
   type PerformanceDistributionRow,
   type TeacherWorkloadRow,
 } from "@/lib/database/repositories/stats";
+import { logger } from "@/lib/logger";
 
 export interface ChartStats {
   attendanceTrend: AttendanceTrendRow[];
@@ -36,7 +37,7 @@ export function useChartStats() {
   useEffect(() => {
     fetchChartStats()
       .then(setData)
-      .catch(console.error)
+      .catch((err: unknown) => logger.error("Failed to fetch chart stats", err))
       .finally(() => setIsLoading(false));
   }, []);
 

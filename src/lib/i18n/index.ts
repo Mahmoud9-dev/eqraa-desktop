@@ -42,6 +42,7 @@ export { type ChartsTranslations, charts } from './charts';
 export {
   formatDate,
   formatDateShort,
+  formatDateISO,
   formatTime,
   formatDateTime,
   formatRelativeTime,

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getStudentCount, getAttendanceAverage } from "@/lib/database/repositories/students";
 import { getTeacherCount } from "@/lib/database/repositories/teachers";
 import { getUpcomingMeetingCount } from "@/lib/database/repositories/meetings";
+import { logger } from "@/lib/logger";
 
 interface HomeStats {
   totalStudents: number;
@@ -34,7 +35,7 @@ export function useHomeStats() {
   useEffect(() => {
     fetchHomeStats()
       .then(setData)
-      .catch(console.error)
+      .catch((err: unknown) => logger.error("Failed to fetch home stats", err))
       .finally(() => setIsLoading(false));
   }, []);
 

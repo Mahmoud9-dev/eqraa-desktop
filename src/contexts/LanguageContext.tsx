@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { translations, type Language, type Translations } from '@/lib/i18n';
+import { logger } from '@/lib/logger';
 
 // ---------------------------------------------------------------------------
 // Language metadata
@@ -62,7 +63,7 @@ export interface LanguageContextType {
   /**
    * Stable translation lookup with dot-notation key and optional interpolation.
    * Falls back to English when the key is missing in the active language.
-   * Emits a console.warn in development when a key cannot be found at all.
+   * Emits a logger.warn in development when a key cannot be found at all.
    *
    * @example
    * tFunc('students.table.name')
@@ -113,16 +114,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       // 2. Fall back to English
       if (result === undefined && language !== 'en') {
         result = resolvePath(translations['en'], key);
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(`[i18n] Missing key "${key}" in "${language}", using English fallback.`);
-        }
+        logger.warn(`[i18n] Missing key "${key}" in "${language}", using English fallback.`);
       }
 
       // 3. Last resort: return the key path
       if (result === undefined) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(`[i18n] Missing key "${key}" in all languages. Rendering key path.`);
-        }
+        logger.warn(`[i18n] Missing key "${key}" in all languages. Rendering key path.`);
         return key;
       }
 
