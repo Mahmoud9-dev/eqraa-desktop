@@ -1,6 +1,7 @@
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
-import { getTajweedLessons, addTajweedLesson, type TajweedLesson } from "@/lib/database/repositories/tajweed";
+import { useState, useEffect, useCallback } from "react";
+import { getTajweedLessonsPaginated, addTajweedLesson, type TajweedLesson } from "@/lib/database/repositories/tajweed";
+import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,22 +15,27 @@ const Tajweed = () => {
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { page, pageSize, nextPage, prevPage } = usePagination({ initialPageSize: 20 });
   const { toast } = useToast();
   const { t, languageMeta } = useLanguage();
 
-  const loadLessons = async () => {
+  const loadLessons = useCallback(async () => {
     try {
-      const data = await getTajweedLessons();
-      setLessons(data);
+      const result = await getTajweedLessonsPaginated({ page, pageSize });
+      setLessons(result.data);
+      setTotalRecords(result.total);
+      setTotalPages(result.totalPages);
     } catch {
       // silently handle
     }
-  };
+  }, [page, pageSize]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadLessons();
-  }, []);
+  }, [loadLessons]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +133,28 @@ const Tajweed = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                {t.common.showingResults
+                  .replace('{count}', String(lessons.length))
+                  .replace('{total}', String(totalRecords))}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={prevPage} disabled={page <= 1}>
+                  {t.common.previous}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {t.common.pageOf
+                    .replace('{page}', String(page))
+                    .replace('{totalPages}', String(totalPages))}
+                </span>
+                <Button variant="outline" size="sm" onClick={nextPage} disabled={page >= totalPages}>
+                  {t.common.next}
+                </Button>
+              </div>
             </div>
           )}
         </div>

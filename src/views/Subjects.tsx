@@ -55,7 +55,7 @@ const Subjects = () => {
   const [isAddLessonDialogOpen, setIsAddLessonDialogOpen] = useState(false);
   const [isAddAssignmentDialogOpen, setIsAddAssignmentDialogOpen] =
     useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<Lesson | Assignment | null>(null);
   const { toast } = useToast();
   const { t, language } = useLanguage();
 

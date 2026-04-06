@@ -33,8 +33,6 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CalendarIcon, Download, FileText, Loader2, Search } from "lucide-react";
 import AttendanceTrendChart from "@/components/charts/AttendanceTrendChart";
 import { getAttendanceTrend, type AttendanceTrendRow } from "@/lib/database/repositories/stats";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
 import { getStudents as fetchStudents } from "@/lib/database/repositories/students";
 import { getTeachers as fetchTeachers } from "@/lib/database/repositories/teachers";
 import {
@@ -48,7 +46,9 @@ import type { Teacher as DbTeacher } from "@/lib/database/repositories/teachers"
 import type { AttendanceRecord as DbAttendanceRecord } from "@/lib/database/repositories/attendance";
 import { exportCSV } from "@/lib/export/csv";
 import { exportPDF } from "@/lib/export/pdf";
-import { formatDate } from "@/lib/i18n";
+import { formatDate, formatDateISO } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
+import { getDepartmentLabel } from "@/lib/labels";
 
 interface Student {
   id: string;
@@ -130,15 +130,6 @@ const Attendance = () => {
     "مأذون": t.attendance.status.excused,
   };
 
-  // Label map for department DB values
-  const departmentLabels: Record<string, string> = {
-    quran: t.attendance.departments.quran,
-    tajweed: t.attendance.departments.tajweed,
-    tarbawi: t.attendance.departments.tarbawi,
-  };
-
-  // date-fns locale based on current language
-  const dateLocale = language === 'ar' ? ar : undefined;
   const [isExporting, setIsExporting] = useState(false);
 
   const attendanceReportHeaders = [
@@ -178,7 +169,7 @@ const Attendance = () => {
         toast({ title: t.export.exportSuccess });
       }
     } catch (err) {
-      console.error("CSV export error:", err);
+      logger.error("CSV export error:", err);
       toast({ title: t.export.exportError, variant: "destructive" });
     } finally {
       setIsExporting(false);
@@ -199,7 +190,7 @@ const Attendance = () => {
         toast({ title: t.export.exportSuccess });
       }
     } catch (err) {
-      console.error("PDF export error:", err);
+      logger.error("PDF export error:", err);
       toast({ title: t.export.exportError, variant: "destructive" });
     } finally {
       setIsExporting(false);
@@ -222,7 +213,7 @@ const Attendance = () => {
       }));
       setStudents(transformedStudents);
     } catch (error) {
-      console.error("Error loading students:", error);
+      logger.error("Error loading students:", error);
     }
   }, []);
 
@@ -237,7 +228,7 @@ const Attendance = () => {
       }));
       setTeachers(transformedTeachers);
     } catch (error) {
-      console.error("Error loading teachers:", error);
+      logger.error("Error loading teachers:", error);
     }
   }, []);
 
@@ -256,7 +247,7 @@ const Attendance = () => {
       setTotalRecords(result.total);
       setTotalPages(result.totalPages);
     } catch (error) {
-      console.error("Error loading attendance records:", error);
+      logger.error("Error loading attendance records:", error);
     }
   }, [page, pageSize]);
 
@@ -272,7 +263,7 @@ const Attendance = () => {
 
   // Reload trend data when period changes
   useEffect(() => {
-    getAttendanceTrend(PERIOD_DAYS[selectedPeriod]).then(setTrendData).catch(console.error);
+    getAttendanceTrend(PERIOD_DAYS[selectedPeriod]).then(setTrendData).catch((err: unknown) => logger.error("Failed to fetch attendance trend", err));
   }, [selectedPeriod]);
 
   const filteredStudents = students.filter((student) => {
@@ -287,13 +278,9 @@ const Attendance = () => {
   const filteredAttendanceRecords = (() => {
     const now = new Date();
     const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - PERIOD_DAYS[selectedPeriod]);
-    const cutoffStr = format(cutoff, "yyyy-MM-dd");
+    const cutoffStr = formatDateISO(cutoff);
     return attendanceRecords.filter((r) => (r.record_date || r.date || '') >= cutoffStr);
   })();
-
-  const getDepartmentName = (dept: string) => {
-    return departmentLabels[dept] || dept;
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -347,7 +334,7 @@ const Attendance = () => {
         description: tFunc('attendance.toast.studentRecordedDesc', { count: recordsToInsert.length }),
       });
     } catch (error) {
-      console.error("Error recording attendance:", error);
+      logger.error("Error recording attendance:", error);
       toast({
         title: t.attendance.toast.error,
         description: t.attendance.toast.recordError,
@@ -413,7 +400,7 @@ const Attendance = () => {
         description: tFunc('attendance.toast.teacherRecordedDesc', { count: recordsToInsert.length }),
       });
     } catch (error) {
-      console.error("Error recording teacher attendance:", error);
+      logger.error("Error recording teacher attendance:", error);
       toast({
         title: t.attendance.toast.error,
         description: t.attendance.toast.recordError,
@@ -531,7 +518,7 @@ const Attendance = () => {
                           <PopoverTrigger asChild>
                             <Button variant="outline" className="w-48">
                               <CalendarIcon className="ms-2 h-4 w-4" />
-                              {format(selectedDate, "PPP", { locale: dateLocale })}
+                              {formatDate(selectedDate, language)}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -589,7 +576,7 @@ const Attendance = () => {
                                 <h5 className="font-medium">{student.name}</h5>
                                 <p className="text-sm text-muted-foreground">
                                   {student.grade} •{" "}
-                                  {getDepartmentName(student.department)}
+                                  {getDepartmentLabel(student.department, t)}
                                 </p>
                               </div>
                               <Badge variant="outline">
@@ -685,8 +672,9 @@ const Attendance = () => {
                           <TableCell>{getStudentName(record.studentId || record.student_id)}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {getDepartmentName(
-                                getStudentDepartment(record.studentId || record.student_id)
+                              {getDepartmentLabel(
+                                getStudentDepartment(record.studentId || record.student_id),
+                                t
                               )}
                             </Badge>
                           </TableCell>
@@ -753,7 +741,7 @@ const Attendance = () => {
                           <PopoverTrigger asChild>
                             <Button variant="outline" className="w-48">
                               <CalendarIcon className="ms-2 h-4 w-4" />
-                              {format(selectedDate, "PPP", { locale: dateLocale })}
+                              {formatDate(selectedDate, language)}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -813,7 +801,7 @@ const Attendance = () => {
                                   {teacher.specialization}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                  {getDepartmentName(teacher.department)}
+                                  {getDepartmentLabel(teacher.department, t)}
                                 </p>
                               </div>
                               <Badge

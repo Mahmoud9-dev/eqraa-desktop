@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -50,6 +50,7 @@ import {
 } from "@/lib/database/repositories/teachers";
 import TeacherWorkloadChart from "@/components/charts/TeacherWorkloadChart";
 import { getTeacherWorkload, type TeacherWorkloadRow } from "@/lib/database/repositories/stats";
+import { logger } from "@/lib/logger";
 
 const Teachers = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,7 +68,7 @@ const Teachers = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [workloadData, setWorkloadData] = useState<TeacherWorkloadRow[]>([]);
 
-  const loadTeachers = async () => {
+  const loadTeachers = useCallback(async () => {
     try {
       const data = await getTeachers();
       const transformed = data.map((t) => ({
@@ -83,15 +84,16 @@ const Teachers = () => {
       }));
       setTeachers(transformed);
     } catch (error) {
-      console.error("Error loading teachers:", error);
+      logger.error("Error loading teachers:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTeachers();
-    getTeacherWorkload().then(setWorkloadData).catch(console.error);
-  }, []);
+     
+    getTeacherWorkload().then(setWorkloadData).catch((err: unknown) => logger.error("Failed to fetch teacher workload", err));
+  }, [loadTeachers]);
 
   // Extended teacher data for display
   const teachersExtended = teachers.map((teacher) => ({
@@ -199,7 +201,7 @@ const Teachers = () => {
         description: t.teachers.toast.addSuccessDesc,
       });
     } catch (error) {
-      console.error("Error adding teacher:", error);
+      logger.error("Error adding teacher:", error);
       toast({
         title: t.teachers.toast.error,
         description: String(error),
@@ -250,7 +252,7 @@ const Teachers = () => {
         description: t.teachers.toast.editSuccessDesc,
       });
     } catch (error) {
-      console.error("Error updating teacher:", error);
+      logger.error("Error updating teacher:", error);
       toast({
         title: t.teachers.toast.error,
         description: String(error),
@@ -272,7 +274,7 @@ const Teachers = () => {
         description: t.teachers.toast.deleteSuccessDesc,
       });
     } catch (error) {
-      console.error("Error deleting teacher:", error);
+      logger.error("Error deleting teacher:", error);
       toast({
         title: t.teachers.toast.error,
         description: String(error),

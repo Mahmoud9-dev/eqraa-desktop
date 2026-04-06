@@ -1,13 +1,13 @@
 
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getStudentsByDept, addStudent } from "@/lib/database/repositories/students";
 import { getTeachersByDept, addTeacher } from "@/lib/database/repositories/teachers";
-import { getQuranSessions, addQuranSession } from "@/lib/database/repositories/quran-sessions";
+import { getQuranSessionsPaginated, addQuranSession } from "@/lib/database/repositories/quran-sessions";
 import { useToast } from "@/hooks/use-toast";
+import { usePagination } from "@/hooks/usePagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -31,6 +31,7 @@ import { exportCSV } from "@/lib/export/csv";
 import { exportPDF } from "@/lib/export/pdf";
 import PerformanceBarChart from "@/components/charts/PerformanceBarChart";
 import { getPerformanceDistribution, type PerformanceDistributionRow } from "@/lib/database/repositories/stats";
+import { logger } from "@/lib/logger";
 
 interface Teacher {
   id: string;
@@ -73,14 +74,13 @@ const Quran = () => {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [rating, setRating] = useState("5");
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string>("");
-  const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
   const { t, tFunc, languageMeta, language, isRTL } = useLanguage();
   const [isExporting, setIsExporting] = useState(false);
   const [perfData, setPerfData] = useState<PerformanceDistributionRow[]>([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { page, pageSize, nextPage, prevPage } = usePagination({ initialPageSize: 10 });
 
   const quranReportHeaders = [
     t.quran.sessionForm.studentLabel,
@@ -142,26 +142,28 @@ const Quran = () => {
     }
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      const [studentsData, teachersData, sessionsData] = await Promise.all([
+      const [studentsData, teachersData, sessionsResult] = await Promise.all([
         getStudentsByDept("quran"),
         getTeachersByDept("quran"),
-        getQuranSessions(),
+        getQuranSessionsPaginated({ page, pageSize }),
       ]);
       setStudents(studentsData as Student[]);
       setTeachers(teachersData as Teacher[]);
-      setSessions(sessionsData as QuranSession[]);
+      setSessions(sessionsResult.data as QuranSession[]);
+      setTotalRecords(sessionsResult.total);
+      setTotalPages(sessionsResult.totalPages);
     } catch (error) {
-      console.error("Failed to load data:", error);
+      logger.error("Failed to load data:", error);
     }
-  };
+  }, [page, pageSize]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     loadData();
-    getPerformanceDistribution().then(setPerfData).catch(console.error);
-  }, []);
+    getPerformanceDistribution().then(setPerfData).catch((err: unknown) => logger.error("Failed to fetch performance distribution", err));
+  }, [loadData]);
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,65 +249,6 @@ const Quran = () => {
     setIsLoading(false);
   };
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const chunks: BlobPart[] = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        setAudioBlob(blob);
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      toast({ title: t.quran.toast.recordingStarted });
-    } catch (error) {
-      toast({
-        title: t.quran.toast.recordingError,
-        description: t.quran.toast.recordingErrorDescription,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    toast({ title: t.quran.toast.recordingStopped });
-  };
-
-  const playAudio = () => {
-    if (audioUrl) {
-      const audio = new Audio(audioUrl);
-      audio.play();
-      setIsPlaying(true);
-      audio.addEventListener("ended", () => setIsPlaying(false));
-    }
-  };
-
-  const pauseAudio = () => {
-    setIsPlaying(false);
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAudioUrl(url);
-      setAudioBlob(file);
-      toast({ title: t.quran.toast.fileUploaded });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -436,7 +379,7 @@ const Quran = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  sessions.slice(0, 10).map((session) => (
+                  sessions.map((session) => (
                     <Card
                       key={session.id}
                       className="border-r-4 border-r-primary"
@@ -459,6 +402,28 @@ const Quran = () => {
                       </CardContent>
                     </Card>
                   ))
+                )}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4">
+                    <p className="text-sm text-muted-foreground">
+                      {t.common.showingResults
+                        .replace('{count}', String(sessions.length))
+                        .replace('{total}', String(totalRecords))}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={prevPage} disabled={page <= 1}>
+                        {t.common.previous}
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {t.common.pageOf
+                          .replace('{page}', String(page))
+                          .replace('{totalPages}', String(totalPages))}
+                      </span>
+                      <Button variant="outline" size="sm" onClick={nextPage} disabled={page >= totalPages}>
+                        {t.common.next}
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

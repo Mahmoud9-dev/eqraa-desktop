@@ -1,6 +1,7 @@
 
+import { Department } from "@/types";
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getTeachers, addTeacher, type Teacher } from "@/lib/database/repositories/teachers";
 import { getStudents, type Student } from "@/lib/database/repositories/students";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { teacherSchema } from "@/lib/validations";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getDepartmentLabel } from "@/lib/labels";
 
 const Admin = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -32,7 +34,7 @@ const Admin = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [teachersData, studentsData] = await Promise.all([
         getTeachers(),
@@ -47,12 +49,12 @@ const Admin = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [toast, t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,10 +101,6 @@ const Admin = () => {
       });
     }
     setIsLoading(false);
-  };
-
-  const getDepartmentLabel = (dept: string) => {
-    return t.admin.departments[dept as keyof typeof t.admin.departments] || dept;
   };
 
   const totalStudents = students.length;
@@ -183,7 +181,7 @@ const Admin = () => {
                       </label>
                       <Select
                         value={department}
-                        onValueChange={(v) => setDepartment(v as any)}
+                        onValueChange={(v) => setDepartment(v as Department)}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -252,7 +250,7 @@ const Admin = () => {
                           {teacher.specialization}
                         </p>
                         <p className="text-sm text-primary font-medium mb-2">
-                          {t.admin.teacherList.departmentPrefix} {getDepartmentLabel(teacher.department)}
+                          {t.admin.teacherList.departmentPrefix} {getDepartmentLabel(teacher.department, t)}
                         </p>
                         {teacher.email && (
                           <p className="text-sm text-muted-foreground">
@@ -298,7 +296,7 @@ const Admin = () => {
                           {t.admin.studentList.age.replace('{age}', String(student.age))}
                         </p>
                         <p className="text-sm text-primary font-medium mb-1">
-                          {getDepartmentLabel(student.department)}
+                          {getDepartmentLabel(student.department, t)}
                         </p>
                         {student.department === "quran" && (
                           <p className="text-sm text-muted-foreground">

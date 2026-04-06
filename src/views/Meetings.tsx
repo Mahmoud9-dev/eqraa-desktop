@@ -1,6 +1,7 @@
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
-import { getMeetings, addMeeting, updateMeetingStatus, deleteMeeting as deleteMeetingRepo } from "@/lib/database/repositories/meetings";
+import { useState, useEffect, useCallback } from "react";
+import { getMeetingsPaginated, addMeeting, updateMeetingStatus, deleteMeeting as deleteMeetingRepo } from "@/lib/database/repositories/meetings";
+import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,9 @@ const Meetings = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingItem | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { page, pageSize, nextPage, prevPage } = usePagination({ initialPageSize: 20 });
   const { toast } = useToast();
   const { t, tFunc, languageMeta } = useLanguage();
 
@@ -62,19 +66,21 @@ const Meetings = () => {
     "إدارية": t.meetings.typeLabels.admin,
   };
 
-  const loadMeetings = async () => {
+  const loadMeetings = useCallback(async () => {
     try {
-      const data = await getMeetings();
-      setMeetings(data as MeetingItem[]);
+      const result = await getMeetingsPaginated({ page, pageSize });
+      setMeetings(result.data as MeetingItem[]);
+      setTotalRecords(result.total);
+      setTotalPages(result.totalPages);
     } catch {
       // silently handle
     }
-  };
+  }, [page, pageSize]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMeetings();
-  }, []);
+  }, [loadMeetings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -397,6 +403,28 @@ const Meetings = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                {t.common.showingResults
+                  .replace('{count}', String(filteredMeetings.length))
+                  .replace('{total}', String(totalRecords))}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={prevPage} disabled={page <= 1}>
+                  {t.common.previous}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {t.common.pageOf
+                    .replace('{page}', String(page))
+                    .replace('{totalPages}', String(totalPages))}
+                </span>
+                <Button variant="outline" size="sm" onClick={nextPage} disabled={page >= totalPages}>
+                  {t.common.next}
+                </Button>
+              </div>
             </div>
           )}
         </div>
