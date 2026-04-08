@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Exam, ExamType } from "@/types";
+import { formatDateISO } from "@/lib/i18n";
 
 interface ExamFormDialogProps {
   isAddDialogOpen: boolean;
@@ -125,10 +126,18 @@ const ExamFormDialog = ({
         <Input
           id={`${idPrefix}-date`}
           type="date"
-          value={newExam.date?.toISOString().split("T")[0]}
-          onChange={(e) =>
-            setNewExam({ ...newExam, date: new Date(e.target.value) })
+          value={
+            newExam.date && Number.isFinite(newExam.date.getTime())
+              ? formatDateISO(newExam.date)
+              : ""
           }
+          onChange={(e) => {
+            const raw = e.target.value;
+            setNewExam({
+              ...newExam,
+              date: raw ? new Date(raw) : undefined,
+            });
+          }}
           className="col-span-3"
         />
       </div>

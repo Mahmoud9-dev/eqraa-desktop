@@ -236,6 +236,11 @@ export function useExams() {
 
   const handleDeleteExam = useCallback(() => {
     if (!selectedExam) return;
+    // Cascade: drop any exam results tied to the deleted exam so the
+    // results tab doesn't keep rendering orphaned rows.
+    setExamResults((prev) =>
+      prev.filter((result) => result.examId !== selectedExam.id),
+    );
     setExams((prev) => prev.filter((exam) => exam.id !== selectedExam.id));
     setIsDeleteDialogOpen(false);
     setSelectedExam(null);
