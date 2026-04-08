@@ -51,9 +51,17 @@ export function RecordsTab({ hook }: RecordsTabProps) {
     memorizationTypeLabel,
     isAddRecordDialogOpen,
     setIsAddRecordDialogOpen,
+    isEditRecordDialogOpen,
+    setIsEditRecordDialogOpen,
+    isDeleteRecordDialogOpen,
+    setIsDeleteRecordDialogOpen,
     newRecord,
     setNewRecord,
     handleAddRecord,
+    handleEditRecord,
+    handleDeleteRecord,
+    openEditRecordDialog,
+    openDeleteRecordDialog,
     getEvaluationColor,
     getMemorizationTypeColor,
   } = hook;
@@ -300,6 +308,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                     variant="outline"
                     size="sm"
                     className="flex-1 text-xs"
+                    onClick={() => openEditRecordDialog(record)}
                   >
                     {qc.actions.edit}
                   </Button>
@@ -307,6 +316,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                     variant="destructive"
                     size="sm"
                     className="flex-1 text-xs"
+                    onClick={() => openDeleteRecordDialog(record)}
                   >
                     {qc.actions.delete}
                   </Button>
@@ -373,6 +383,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                           variant="outline"
                           size="sm"
                           className="text-xs px-2"
+                          onClick={() => openEditRecordDialog(record)}
                         >
                           {qc.actions.edit}
                         </Button>
@@ -380,6 +391,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                           variant="destructive"
                           size="sm"
                           className="text-xs px-2"
+                          onClick={() => openDeleteRecordDialog(record)}
                         >
                           {qc.actions.delete}
                         </Button>
@@ -392,6 +404,131 @@ export function RecordsTab({ hook }: RecordsTabProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Record Dialog */}
+      <Dialog open={isEditRecordDialogOpen} onOpenChange={setIsEditRecordDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{qc.editRecordDialog.title}</DialogTitle>
+            <DialogDescription>{qc.editRecordDialog.description}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-surah" className="text-end">
+                {qc.addRecordDialog.surahLabel}
+              </Label>
+              <Input
+                id="edit-surah"
+                value={newRecord.surahName}
+                onChange={(e) => setNewRecord({ ...newRecord, surahName: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-from" className="text-end">
+                {qc.addRecordDialog.fromVerseLabel}
+              </Label>
+              <Input
+                id="edit-from"
+                type="number"
+                value={newRecord.versesFrom}
+                onChange={(e) =>
+                  setNewRecord({ ...newRecord, versesFrom: parseInt(e.target.value) || 1 })
+                }
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-to" className="text-end">
+                {qc.addRecordDialog.toVerseLabel}
+              </Label>
+              <Input
+                id="edit-to"
+                type="number"
+                value={newRecord.versesTo}
+                onChange={(e) =>
+                  setNewRecord({ ...newRecord, versesTo: parseInt(e.target.value) || 1 })
+                }
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-type" className="text-end">
+                {qc.addRecordDialog.typeLabel}
+              </Label>
+              <Select
+                value={newRecord.memorizationType}
+                onValueChange={(value) =>
+                  setNewRecord({
+                    ...newRecord,
+                    memorizationType: value as "حفظ جديد" | "مراجعة",
+                  })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder={qc.addRecordDialog.typePlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="حفظ جديد">{qc.memorizationType.newMemorization}</SelectItem>
+                  <SelectItem value="مراجعة">{qc.memorizationType.revision}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-evaluation" className="text-end">
+                {qc.addRecordDialog.evaluationLabel}
+              </Label>
+              <Input
+                id="edit-evaluation"
+                type="number"
+                min="1"
+                max="10"
+                value={newRecord.evaluation}
+                onChange={(e) =>
+                  setNewRecord({ ...newRecord, evaluation: parseInt(e.target.value) || 0 })
+                }
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-notes" className="text-end">
+                {qc.addRecordDialog.notesLabel}
+              </Label>
+              <Textarea
+                id="edit-notes"
+                value={newRecord.notes}
+                onChange={(e) => setNewRecord({ ...newRecord, notes: e.target.value })}
+                className="col-span-3"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditRecordDialogOpen(false)}>
+              {qc.actions.cancel}
+            </Button>
+            <Button onClick={handleEditRecord}>{qc.editRecordDialog.submit}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Record Dialog */}
+      <Dialog open={isDeleteRecordDialogOpen} onOpenChange={setIsDeleteRecordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{qc.deleteRecordDialog.title}</DialogTitle>
+            <DialogDescription>{qc.deleteRecordDialog.description}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteRecordDialogOpen(false)}>
+              {qc.actions.cancel}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteRecord}>
+              {qc.deleteRecordDialog.confirm}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

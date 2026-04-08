@@ -10,7 +10,7 @@ export function paginationClause(params?: PaginationParams): {
   limit: number
   offset: number
 } {
-  const page = params?.page ?? 1
+  const page = Math.max(1, params?.page ?? 1)
   const pageSize = params?.pageSize ?? DEFAULT_PAGE_SIZE
   const offset = (page - 1) * pageSize
   return {

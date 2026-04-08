@@ -30,7 +30,7 @@ export function MembersTab({ hook }: MembersTabProps) {
           <CardHeader>
             <CardTitle className="flex items-center space-x-3 space-x-reverse">
               <Avatar className="w-10 h-10">
-                <AvatarImage src="" />
+                <AvatarImage src={undefined} />
                 <AvatarFallback>
                   {circle.name
                     .split(" ")
@@ -60,7 +60,7 @@ export function MembersTab({ hook }: MembersTabProps) {
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="w-8 h-8 shrink-0">
-                          <AvatarImage src="" />
+                          <AvatarImage src={undefined} />
                           <AvatarFallback className="text-xs">
                             {students[member.studentId]
                               ?.split(" ")

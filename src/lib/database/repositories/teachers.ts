@@ -79,14 +79,14 @@ async function ensureTeachersSeeded(): Promise<void> {
 export async function getTeachers(): Promise<Teacher[]> {
   await ensureTeachersSeeded();
   const db = await getDb();
-  return db.select<Teacher[]>("SELECT * FROM teachers ORDER BY name LIMIT 200");
+  return db.select<Teacher[]>("SELECT * FROM teachers ORDER BY name");
 }
 
 export async function getTeachersByDept(department: string): Promise<Teacher[]> {
   await ensureTeachersSeeded();
   const db = await getDb();
   return db.select<Teacher[]>(
-    "SELECT * FROM teachers WHERE department = $1 ORDER BY name LIMIT 200",
+    "SELECT * FROM teachers WHERE department = $1 ORDER BY name",
     [department]
   );
 }
@@ -95,7 +95,7 @@ export async function getActiveTeachers(): Promise<Teacher[]> {
   await ensureTeachersSeeded();
   const db = await getDb();
   return db.select<Teacher[]>(
-    "SELECT * FROM teachers WHERE is_active = 1 ORDER BY name LIMIT 200"
+    "SELECT * FROM teachers WHERE is_active = 1 ORDER BY name"
   );
 }
 

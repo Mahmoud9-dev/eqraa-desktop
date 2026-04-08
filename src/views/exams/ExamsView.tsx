@@ -53,6 +53,8 @@ const ExamsView = () => {
     getExamStatusText,
     getExamTypeLabel,
     getResultStatusLabel,
+    searchTerm,
+    setSearchTerm,
     t,
     language,
   } = hook;
@@ -73,6 +75,8 @@ const ExamsView = () => {
           <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
             <div className="w-full sm:w-auto">
               <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t.exams.searchPlaceholder}
                 className="w-full sm:w-64"
               />

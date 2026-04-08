@@ -73,10 +73,19 @@ export function useExams() {
   const [examResults, setExamResults] = useState<ExamResult[]>(INITIAL_RESULTS);
   const [newExam, setNewExam] = useState<Partial<Exam>>(DEFAULT_EXAM_FORM);
   const [newResult, setNewResult] = useState<Partial<ExamResult>>(DEFAULT_RESULT_FORM);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const filteredExams = useMemo(
-    () => exams.filter((exam) => exam.type === activeTab),
-    [exams, activeTab],
+    () =>
+      exams
+        .filter((exam) => exam.type === activeTab)
+        .filter(
+          (exam) =>
+            !searchTerm ||
+            exam.title.includes(searchTerm) ||
+            (exam.description ?? "").includes(searchTerm),
+        ),
+    [exams, activeTab, searchTerm],
   );
 
   const filteredResults = useMemo(() => {
@@ -225,7 +234,7 @@ export function useExams() {
     if (!exam) return;
 
     const percentage = Math.round((newResult.marks / exam.totalMarks) * 100);
-    const status = percentage >= exam.passingMarks ? "\u0646\u0627\u062c\u062d" : "\u0631\u0627\u0633\u0628";
+    const status = newResult.marks >= exam.passingMarks ? "\u0646\u0627\u062c\u062d" : "\u0631\u0627\u0633\u0628";
 
     const result: ExamResult = {
       id: Date.now().toString(),
@@ -262,10 +271,7 @@ export function useExams() {
     if (!exam) return;
 
     const percentage = Math.round((newResult.marks / exam.totalMarks) * 100);
-    const status =
-      percentage >= (exam.passingMarks / exam.totalMarks) * 100
-        ? "\u0646\u0627\u062c\u062d"
-        : "\u0631\u0627\u0633\u0628";
+    const status = newResult.marks! >= exam.passingMarks ? "\u0646\u0627\u062c\u062d" : "\u0631\u0627\u0633\u0628";
 
     setExamResults((prev) =>
       prev.map((r) =>
@@ -344,6 +350,7 @@ export function useExams() {
     openEditDialog, openDeleteDialog, openResultDialog,
     openEditResultDialog, openDeleteResultDialog,
     getExamStatusText, getExamTypeLabel, getResultStatusLabel,
+    searchTerm, setSearchTerm,
     t, language,
   };
 }

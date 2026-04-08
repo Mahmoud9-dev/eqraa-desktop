@@ -84,7 +84,7 @@ export function StudentTable({
                   <TableCell className="text-xs sm:text-sm">
                     <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                       <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
-                        <AvatarImage src="" />
+                        <AvatarImage src={undefined} />
                         <AvatarFallback className="text-xs sm:text-sm">
                           {student.name
                             .split(" ")

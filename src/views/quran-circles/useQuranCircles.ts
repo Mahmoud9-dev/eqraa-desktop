@@ -162,11 +162,14 @@ export function useQuranCircles() {
     useState(false);
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
   const [isAddRecordDialogOpen, setIsAddRecordDialogOpen] = useState(false);
+  const [isEditRecordDialogOpen, setIsEditRecordDialogOpen] = useState(false);
+  const [isDeleteRecordDialogOpen, setIsDeleteRecordDialogOpen] = useState(false);
 
   // Selection state
   const [selectedCircle, setSelectedCircle] = useState<QuranCircle | null>(
     null
   );
+  const [selectedRecord, setSelectedRecord] = useState<MemorizationRecord | null>(null);
 
   // Data state
   const [circles, setCircles] = useState<QuranCircle[]>(INITIAL_CIRCLES);
@@ -353,6 +356,69 @@ export function useQuranCircles() {
     });
   }, [newRecord, toast, qc]);
 
+  const openEditRecordDialog = useCallback((record: MemorizationRecord) => {
+    setSelectedRecord(record);
+    setNewRecord({
+      studentId: record.studentId,
+      circleId: record.circleId,
+      date: record.date,
+      surahName: record.surahName,
+      versesFrom: record.versesFrom,
+      versesTo: record.versesTo,
+      memorizationType: record.memorizationType,
+      evaluation: record.evaluation,
+      notes: record.notes,
+    });
+    setIsEditRecordDialogOpen(true);
+  }, []);
+
+  const handleEditRecord = useCallback(() => {
+    if (!selectedRecord || !newRecord.surahName) {
+      toast({
+        title: qc.toast.error,
+        description: qc.toast.fillRecordRequired,
+        variant: "destructive",
+      });
+      return;
+    }
+    setMemorizationRecords((prev) =>
+      prev.map((r) =>
+        r.id === selectedRecord.id
+          ? {
+              ...r,
+              studentId: newRecord.studentId || r.studentId,
+              circleId: newRecord.circleId || r.circleId,
+              date: newRecord.date || r.date,
+              surahName: newRecord.surahName || r.surahName,
+              versesFrom: newRecord.versesFrom ?? r.versesFrom,
+              versesTo: newRecord.versesTo ?? r.versesTo,
+              memorizationType: (newRecord.memorizationType as "حفظ جديد" | "مراجعة") || r.memorizationType,
+              evaluation: newRecord.evaluation ?? r.evaluation,
+              notes: newRecord.notes,
+              evaluatedBy: "current_user",
+            }
+          : r,
+      ),
+    );
+    setIsEditRecordDialogOpen(false);
+    setSelectedRecord(null);
+    setNewRecord({ ...INITIAL_RECORD_FORM });
+    toast({ title: qc.toast.editedTitle, description: qc.toast.recordEdited });
+  }, [selectedRecord, newRecord, toast, qc]);
+
+  const openDeleteRecordDialog = useCallback((record: MemorizationRecord) => {
+    setSelectedRecord(record);
+    setIsDeleteRecordDialogOpen(true);
+  }, []);
+
+  const handleDeleteRecord = useCallback(() => {
+    if (!selectedRecord) return;
+    setMemorizationRecords((prev) => prev.filter((r) => r.id !== selectedRecord.id));
+    setIsDeleteRecordDialogOpen(false);
+    setSelectedRecord(null);
+    toast({ title: qc.toast.deletedTitle, description: qc.toast.recordDeleted });
+  }, [selectedRecord, toast, qc]);
+
   const openEditCircleDialog = useCallback((circle: QuranCircle) => {
     setSelectedCircle(circle);
     setNewCircle({
@@ -399,8 +465,13 @@ export function useQuranCircles() {
     setIsAddMemberDialogOpen,
     isAddRecordDialogOpen,
     setIsAddRecordDialogOpen,
+    isEditRecordDialogOpen,
+    setIsEditRecordDialogOpen,
+    isDeleteRecordDialogOpen,
+    setIsDeleteRecordDialogOpen,
     // Selection
     selectedCircle,
+    selectedRecord,
     // Form state
     newCircle,
     setNewCircle,
@@ -418,8 +489,12 @@ export function useQuranCircles() {
     handleDeleteCircle,
     handleAddMember,
     handleAddRecord,
+    handleEditRecord,
+    handleDeleteRecord,
     openEditCircleDialog,
     openDeleteCircleDialog,
+    openEditRecordDialog,
+    openDeleteRecordDialog,
   };
 }
 

@@ -125,9 +125,18 @@ const ExamFormDialog = ({
         <Input
           id={`${idPrefix}-date`}
           type="date"
-          value={newExam.date?.toISOString().split("T")[0]}
+          value={
+            newExam.date instanceof Date && !Number.isNaN(newExam.date.getTime())
+              ? newExam.date.toISOString().split("T")[0]
+              : ""
+          }
           onChange={(e) =>
-            setNewExam({ ...newExam, date: new Date(e.target.value) })
+            setNewExam({
+              ...newExam,
+              date: e.target.value
+                ? new Date(`${e.target.value}T00:00:00`)
+                : undefined,
+            })
           }
           className="col-span-3"
         />

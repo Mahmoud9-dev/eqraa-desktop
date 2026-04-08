@@ -120,6 +120,18 @@ export interface QuranCirclesTranslations {
     submit: string;
   };
 
+  editRecordDialog: {
+    title: string;
+    description: string;
+    submit: string;
+  };
+
+  deleteRecordDialog: {
+    title: string;
+    description: string;
+    confirm: string;
+  };
+
   memorizationType: {
     newMemorization: string;
     revision: string;
@@ -144,6 +156,8 @@ export interface QuranCirclesTranslations {
     circleDeleted: string;
     memberAdded: string;
     recordAdded: string;
+    recordEdited: string;
+    recordDeleted: string;
   };
 }
 
@@ -268,6 +282,18 @@ export const quranCircles: Record<Language, QuranCirclesTranslations> = {
       submit: 'إضافة سجل',
     },
 
+    editRecordDialog: {
+      title: 'تعديل سجل الحفظ',
+      description: 'قم بتعديل بيانات سجل الحفظ',
+      submit: 'حفظ التعديلات',
+    },
+
+    deleteRecordDialog: {
+      title: 'تأكيد الحذف',
+      description: 'هل أنت متأكد من حذف هذا السجل؟ لا يمكن التراجع عن هذا الإجراء.',
+      confirm: 'حذف',
+    },
+
     memorizationType: {
       newMemorization: 'حفظ جديد',
       revision: 'مراجعة',
@@ -292,6 +318,8 @@ export const quranCircles: Record<Language, QuranCirclesTranslations> = {
       circleDeleted: 'تم حذف الحلقة بنجاح',
       memberAdded: 'تم إضافة الطالب للحلقة بنجاح',
       recordAdded: 'تم إضافة سجل الحفظ بنجاح',
+      recordEdited: 'تم تعديل سجل الحفظ بنجاح',
+      recordDeleted: 'تم حذف سجل الحفظ بنجاح',
     },
   },
 
@@ -415,6 +443,18 @@ export const quranCircles: Record<Language, QuranCirclesTranslations> = {
       submit: 'Add Record',
     },
 
+    editRecordDialog: {
+      title: 'Edit Memorization Record',
+      description: 'Edit the memorization record details',
+      submit: 'Save Changes',
+    },
+
+    deleteRecordDialog: {
+      title: 'Confirm Deletion',
+      description: 'Are you sure you want to delete this record? This action cannot be undone.',
+      confirm: 'Delete',
+    },
+
     memorizationType: {
       newMemorization: 'New Memorization',
       revision: 'Revision',
@@ -439,6 +479,8 @@ export const quranCircles: Record<Language, QuranCirclesTranslations> = {
       circleDeleted: 'Circle deleted successfully',
       memberAdded: 'Student added to circle successfully',
       recordAdded: 'Memorization record added successfully',
+      recordEdited: 'Memorization record updated successfully',
+      recordDeleted: 'Memorization record deleted successfully',
     },
   },
 };
