@@ -48,11 +48,12 @@ test.describe("App Navigation", () => {
     await page.goto("/");
     await page.waitForSelector("#root", { state: "attached" });
 
-    const studentsLink = page.getByRole("link", { name: /student/i });
+    const studentsLink = page.getByRole("link", { name: /student/i }).first();
 
-    if (await studentsLink.isVisible()) {
-      await studentsLink.click();
-      await expect(page).toHaveURL(/\/students/);
-    }
+    // Fail loudly if navigation is broken; previously the missing link
+    // silently passed the test.
+    await expect(studentsLink).toBeVisible();
+    await studentsLink.click();
+    await expect(page).toHaveURL(/\/students/);
   });
 });
