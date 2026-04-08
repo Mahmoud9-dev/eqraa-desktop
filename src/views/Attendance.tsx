@@ -232,10 +232,23 @@ const Attendance = () => {
     }
   }, []);
 
-  // Load attendance records from SQLite (paginated)
+  // Load attendance records from SQLite (paginated). The selectedPeriod
+  // cutoff is pushed into the repo query so data, total, and totalPages
+  // all reflect the same filtered set.
   const loadAttendanceRecords = useCallback(async () => {
     try {
-      const result = await getAttendanceRecordsPaginated({ page, pageSize });
+      const now = new Date();
+      const cutoff = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - PERIOD_DAYS[selectedPeriod],
+      );
+      const startDate = formatDateISO(cutoff);
+      const result = await getAttendanceRecordsPaginated({
+        page,
+        pageSize,
+        startDate,
+      });
       const transformedRecords: AttendanceRecord[] = result.data.map((r) => ({
         ...r,
         studentId: r.student_id || "",
@@ -249,7 +262,7 @@ const Attendance = () => {
     } catch (error) {
       logger.error("Error loading attendance records:", error);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, selectedPeriod]);
 
   // Load all data on mount
   useEffect(() => {
@@ -266,6 +279,12 @@ const Attendance = () => {
     getAttendanceTrend(PERIOD_DAYS[selectedPeriod]).then(setTrendData).catch((err: unknown) => logger.error("Failed to fetch attendance trend", err));
   }, [selectedPeriod]);
 
+  // Reset pagination whenever the period cutoff changes so the user
+  // doesn't land on a stale page beyond the filtered totalPages.
+  useEffect(() => {
+    resetPage();
+  }, [selectedPeriod, resetPage]);
+
   const filteredStudents = students.filter((student) => {
     const matchesSearch = student.name
       .toLowerCase()
@@ -275,12 +294,9 @@ const Attendance = () => {
     return matchesSearch && matchesDepartment;
   });
 
-  const filteredAttendanceRecords = (() => {
-    const now = new Date();
-    const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - PERIOD_DAYS[selectedPeriod]);
-    const cutoffStr = formatDateISO(cutoff);
-    return attendanceRecords.filter((r) => (r.record_date || r.date || '') >= cutoffStr);
-  })();
+  // Period filtering moved into the paginated repo query, so
+  // `attendanceRecords` is already the filtered slice for the current page.
+  const filteredAttendanceRecords = attendanceRecords;
 
   const getStatusColor = (status: string) => {
     switch (status) {

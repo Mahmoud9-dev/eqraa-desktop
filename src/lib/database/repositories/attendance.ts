@@ -72,18 +72,23 @@ export async function insertAttendanceRecords(
 }
 
 export async function getAttendanceRecordsPaginated(
-  params: PaginationParams
+  params: PaginationParams & { startDate?: string }
 ): Promise<PaginatedResponse<AttendanceRecord>> {
   const db = await getDb();
   const { clause } = paginationClause(params);
 
+  const whereClause = params.startDate ? "WHERE record_date >= $1" : "";
+  const whereArgs: string[] = params.startDate ? [params.startDate] : [];
+
   const countResult = await db.select<[{ count: number }]>(
-    "SELECT COUNT(*) as count FROM attendance_records"
+    `SELECT COUNT(*) as count FROM attendance_records ${whereClause}`,
+    whereArgs
   );
   const total = countResult[0].count;
 
   const data = await db.select<AttendanceRecord[]>(
-    `SELECT * FROM attendance_records ORDER BY record_date DESC ${clause}`
+    `SELECT * FROM attendance_records ${whereClause} ORDER BY record_date DESC ${clause}`,
+    whereArgs
   );
 
   return {
