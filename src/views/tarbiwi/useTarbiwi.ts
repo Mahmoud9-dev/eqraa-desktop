@@ -77,6 +77,7 @@ export function useTarbiwi() {
 
   // Tab state
   const [activeTab, setActiveTab] = useState("programs");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Dialog visibility
   const [isAddProgramDialogOpen, setIsAddProgramDialogOpen] = useState(false);
@@ -162,11 +163,11 @@ export function useTarbiwi() {
               ...program,
               title: newProgram.title || program.title,
               description: newProgram.description || program.description,
-              dayOfWeek: newProgram.dayOfWeek || program.dayOfWeek,
-              time: newProgram.time || program.time,
-              duration: newProgram.duration || program.duration,
-              targetAge: newProgram.targetAge || program.targetAge,
-              isActive: newProgram.isActive !== undefined ? newProgram.isActive : program.isActive,
+              dayOfWeek: newProgram.dayOfWeek ?? program.dayOfWeek,
+              time: newProgram.time ?? program.time,
+              duration: newProgram.duration ?? program.duration,
+              targetAge: newProgram.targetAge ?? program.targetAge,
+              isActive: newProgram.isActive ?? program.isActive,
             }
           : program
       )
@@ -256,11 +257,11 @@ export function useTarbiwi() {
               ...assignment,
               title: newAssignment.title || assignment.title,
               description: newAssignment.description || assignment.description,
-              type: newAssignment.type || assignment.type,
-              dueDate: newAssignment.dueDate || assignment.dueDate,
-              targetAge: newAssignment.targetAge || assignment.targetAge,
-              points: newAssignment.points || assignment.points,
-              isActive: newAssignment.isActive !== undefined ? newAssignment.isActive : assignment.isActive,
+              type: newAssignment.type ?? assignment.type,
+              dueDate: newAssignment.dueDate ?? assignment.dueDate,
+              targetAge: newAssignment.targetAge ?? assignment.targetAge,
+              points: newAssignment.points ?? assignment.points,
+              isActive: newAssignment.isActive ?? assignment.isActive,
             }
           : assignment
       )
@@ -308,6 +309,62 @@ export function useTarbiwi() {
 
   // ---- Assessment CRUD ----
 
+  const handleEditAssessment = useCallback(
+    (assessment: Assessment) => {
+      // Reuse the add form for editing: prefill, remove the original, and
+      // let the existing add handler re-insert on submit.
+      setNewAssessment({
+        studentId: assessment.studentId,
+        date: new Date(assessment.date),
+        criteria: assessment.criteria,
+        rating: assessment.rating,
+        notes: assessment.notes,
+        evaluatedBy: assessment.evaluatedBy,
+      });
+      setAssessments((prev) => prev.filter((a) => a.id !== assessment.id));
+      setIsAddAssessmentDialogOpen(true);
+    },
+    [],
+  );
+
+  const handleDeleteAssessment = useCallback(
+    (assessment: Assessment) => {
+      setAssessments((prev) => prev.filter((a) => a.id !== assessment.id));
+      toast({
+        title: tb.assessments.toast.deleteSuccess,
+        description: tb.assessments.toast.deleteSuccessDescription,
+      });
+    },
+    [toast, tb],
+  );
+
+  // Filtered collections (search)
+  const filteredPrograms = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return programs;
+    return programs.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q),
+    );
+  }, [programs, searchTerm]);
+
+  const filteredAssignments = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return assignments;
+    return assignments.filter(
+      (a) =>
+        a.title.toLowerCase().includes(q) ||
+        a.description.toLowerCase().includes(q),
+    );
+  }, [assignments, searchTerm]);
+
+  const filteredAssessments = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return assessments;
+    return assessments.filter((a) => a.criteria.toLowerCase().includes(q));
+  }, [assessments, searchTerm]);
+
   const handleAddAssessment = useCallback(() => {
     if (!newAssessment.studentId || !newAssessment.criteria || newAssessment.rating === 0) {
       toast({
@@ -342,8 +399,13 @@ export function useTarbiwi() {
     activeTab,
     setActiveTab,
 
+    // Search
+    searchTerm,
+    setSearchTerm,
+
     // Programs
     programs,
+    filteredPrograms,
     newProgram,
     setNewProgram,
     selectedProgram,
@@ -361,6 +423,7 @@ export function useTarbiwi() {
 
     // Assignments
     assignments,
+    filteredAssignments,
     newAssignment,
     setNewAssignment,
     selectedAssignment,
@@ -379,11 +442,14 @@ export function useTarbiwi() {
 
     // Assessments
     assessments,
+    filteredAssessments,
     newAssessment,
     setNewAssessment,
     isAddAssessmentDialogOpen,
     setIsAddAssessmentDialogOpen,
     handleAddAssessment,
+    handleEditAssessment,
+    handleDeleteAssessment,
 
     // Helpers
     daysArray,

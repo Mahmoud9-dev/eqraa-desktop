@@ -82,7 +82,11 @@ export function ProgramsTab({ programs, daysArray, onEdit, onDelete, tb }: Progr
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2 space-x-reverse">
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(program as TarbiwiProgram)}
+                    >
                       {actions.view}
                     </Button>
                     <Button

@@ -39,7 +39,12 @@ const TarbiwiView = () => {
 
           <div className="flex justify-between items-center mb-6">
             <div className="flex space-x-4 space-x-reverse">
-              <Input placeholder={tb.searchPlaceholder} className="w-64" />
+              <Input
+                placeholder={tb.searchPlaceholder}
+                className="w-64"
+                value={hook.searchTerm}
+                onChange={(e) => hook.setSearchTerm(e.target.value)}
+              />
             </div>
             <div className="flex space-x-2 space-x-reverse">
               <Dialog
@@ -75,7 +80,7 @@ const TarbiwiView = () => {
 
           <TabsContent value="programs" className="mt-6">
             <ProgramsTab
-              programs={hook.programs}
+              programs={hook.filteredPrograms}
               daysArray={hook.daysArray}
               onEdit={hook.openEditProgramDialog}
               onDelete={hook.openDeleteProgramDialog}
@@ -85,7 +90,7 @@ const TarbiwiView = () => {
 
           <TabsContent value="assignments" className="mt-6">
             <AssignmentsTab
-              assignments={hook.assignments}
+              assignments={hook.filteredAssignments}
               assignmentTypeLabels={hook.assignmentTypeLabels}
               language={hook.language}
               onEdit={hook.openEditAssignmentDialog}
@@ -96,12 +101,14 @@ const TarbiwiView = () => {
 
           <TabsContent value="assessments" className="mt-6">
             <AssessmentsTab
-              assessments={hook.assessments}
+              assessments={hook.filteredAssessments}
               newAssessment={hook.newAssessment}
               onAssessmentChange={hook.setNewAssessment}
               isAddDialogOpen={hook.isAddAssessmentDialogOpen}
               setIsAddDialogOpen={hook.setIsAddAssessmentDialogOpen}
               onAddAssessment={hook.handleAddAssessment}
+              onEditAssessment={hook.handleEditAssessment}
+              onDeleteAssessment={hook.handleDeleteAssessment}
               language={hook.language}
               tb={tbRecord}
             />

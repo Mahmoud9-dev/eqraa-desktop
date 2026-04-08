@@ -15,10 +15,10 @@ interface ContentTabProps {
 }
 
 export function ContentTab({ language, tb }: ContentTabProps) {
-  const content = tb.content as Record<string, unknown>;
-  const articles = content.articles as Record<string, string>;
-  const videos = content.videos as Record<string, string>;
-  const programs = tb.programs as Record<string, string>;
+  const content = (tb.content ?? {}) as Record<string, unknown>;
+  const articles = (content.articles ?? {}) as Record<string, string>;
+  const videos = (content.videos ?? {}) as Record<string, string>;
+  const programs = (tb.programs ?? {}) as Record<string, string>;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

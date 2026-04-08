@@ -50,6 +50,8 @@ interface AssessmentsTabProps {
   isAddDialogOpen: boolean;
   setIsAddDialogOpen: (open: boolean) => void;
   onAddAssessment: () => void;
+  onEditAssessment: (assessment: Assessment) => void;
+  onDeleteAssessment: (assessment: Assessment) => void;
   language: Language;
   tb: Record<string, unknown>;
 }
@@ -61,6 +63,8 @@ export function AssessmentsTab({
   isAddDialogOpen,
   setIsAddDialogOpen,
   onAddAssessment,
+  onEditAssessment,
+  onDeleteAssessment,
   language,
   tb,
 }: AssessmentsTabProps) {
@@ -202,10 +206,18 @@ export function AssessmentsTab({
                   <TableCell>{assessment.notes}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2 space-x-reverse">
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEditAssessment(assessment)}
+                      >
                         {actions.edit}
                       </Button>
-                      <Button variant="destructive" size="sm">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => onDeleteAssessment(assessment)}
+                      >
                         {actions.delete}
                       </Button>
                     </div>

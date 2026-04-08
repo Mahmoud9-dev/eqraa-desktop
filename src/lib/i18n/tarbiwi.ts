@@ -152,6 +152,8 @@ export interface TarbiwiTranslations {
     toast: {
       addSuccess: string;
       addSuccessDescription: string;
+      deleteSuccess: string;
+      deleteSuccessDescription: string;
       validationError: string;
       validationErrorDescription: string;
     };
@@ -340,6 +342,8 @@ export const tarbiwi: Record<Language, TarbiwiTranslations> = {
       toast: {
         addSuccess: 'تم الإضافة',
         addSuccessDescription: 'تم إضافة التقييم بنجاح',
+        deleteSuccess: 'تم الحذف',
+        deleteSuccessDescription: 'تم حذف التقييم بنجاح',
         validationError: 'خطأ',
         validationErrorDescription: 'يرجى ملء جميع الحقول المطلوبة',
       },
@@ -527,6 +531,8 @@ export const tarbiwi: Record<Language, TarbiwiTranslations> = {
       toast: {
         addSuccess: 'Added',
         addSuccessDescription: 'Assessment added successfully',
+        deleteSuccess: 'Deleted',
+        deleteSuccessDescription: 'Assessment deleted successfully',
         validationError: 'Error',
         validationErrorDescription: 'Please fill in all required fields',
       },
