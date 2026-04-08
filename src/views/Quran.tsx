@@ -160,10 +160,19 @@ const Quran = () => {
   }, [page, pageSize]);
 
   useEffect(() => {
-
+     
     loadData();
-    getPerformanceDistribution().then(setPerfData).catch((err: unknown) => logger.error("Failed to fetch performance distribution", err));
   }, [loadData]);
+
+  // Chart data is independent of pagination — fetch once on mount to
+  // avoid re-hitting the stats endpoint every time the user pages.
+  useEffect(() => {
+    getPerformanceDistribution()
+      .then(setPerfData)
+      .catch((err: unknown) =>
+        logger.error("Failed to fetch performance distribution", err),
+      );
+  }, []);
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
