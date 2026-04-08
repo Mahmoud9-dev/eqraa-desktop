@@ -577,7 +577,7 @@ const Subjects = () => {
 
                           return (
                             <div key={type} className="space-y-3">
-                              <div className="flex items-center space-x-2 space-x-reverse mb-3">
+                              <div className="flex items-center gap-2 mb-3">
                                 <span className="text-lg font-semibold">
                                   {getResourceIcon(type as ResourceType)}
                                 </span>
@@ -874,7 +874,7 @@ const Subjects = () => {
                                 {formatDate(assignment.dueDate, language)}
                               </TableCell>
                               <TableCell>
-                                <div className="flex space-x-2 space-x-reverse">
+                                <div className="flex gap-2">
                                   <Button
                                     variant="outline"
                                     size="sm"

@@ -46,7 +46,7 @@ const TarbiwiView = () => {
                 onChange={(e) => hook.setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex space-x-2 space-x-reverse">
+            <div className="flex gap-2">
               <Dialog
                 open={hook.isAddAssignmentDialogOpen}
                 onOpenChange={hook.setIsAddAssignmentDialogOpen}

@@ -512,7 +512,7 @@ const Attendance = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.dateLabel}</label>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -532,7 +532,7 @@ const Attendance = () => {
                         </Popover>
                       </div>
 
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.departmentLabel}</label>
                         <Select
                           value={filterDepartment}
@@ -584,7 +584,7 @@ const Attendance = () => {
                               </Badge>
                             </div>
 
-                            <div className="flex space-x-2 space-x-reverse">
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant={
@@ -735,7 +735,7 @@ const Attendance = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.dateLabel}</label>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -755,7 +755,7 @@ const Attendance = () => {
                         </Popover>
                       </div>
 
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.departmentLabel}</label>
                         <Select
                           value={filterDepartment}
@@ -813,7 +813,7 @@ const Attendance = () => {
                               </Badge>
                             </div>
 
-                            <div className="flex space-x-2 space-x-reverse">
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant={

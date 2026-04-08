@@ -63,7 +63,7 @@ export function ProgramFormDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-program-title`} className="text-right">
+            <Label htmlFor={`${mode}-program-title`} className="text-end">
               {form.title}
             </Label>
             <Input
@@ -74,7 +74,7 @@ export function ProgramFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-program-description`} className="text-right">
+            <Label htmlFor={`${mode}-program-description`} className="text-end">
               {form.description}
             </Label>
             <Textarea
@@ -86,7 +86,7 @@ export function ProgramFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-program-day`} className="text-right">
+            <Label htmlFor={`${mode}-program-day`} className="text-end">
               {form.day}
             </Label>
             <Select
@@ -108,7 +108,7 @@ export function ProgramFormDialog({
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-program-time`} className="text-right">
+            <Label htmlFor={`${mode}-program-time`} className="text-end">
               {form.time}
             </Label>
             <Input
@@ -120,7 +120,7 @@ export function ProgramFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-program-duration`} className="text-right">
+            <Label htmlFor={`${mode}-program-duration`} className="text-end">
               {form.durationMinutes}
             </Label>
             <Input
@@ -132,7 +132,7 @@ export function ProgramFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-program-targetAge`} className="text-right">
+            <Label htmlFor={`${mode}-program-targetAge`} className="text-end">
               {form.targetAge}
             </Label>
             <Input

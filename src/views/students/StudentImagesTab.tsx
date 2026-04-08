@@ -237,7 +237,7 @@ function EditImagesDialog({
         <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
           {editingImageType === "new" && (
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-new" className="text-right">
+              <Label htmlFor="edit-new" className="text-end">
                 {t.students.images.newSurah}
               </Label>
               <Input
@@ -252,7 +252,7 @@ function EditImagesDialog({
           {editingImageType === "recent" &&
             (["recent1", "recent2", "recent3"] as const).map((key, i) => (
               <div key={key} className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor={`edit-${key}`} className="text-right">
+                <Label htmlFor={`edit-${key}`} className="text-end">
                   {t.students.images.recentPast} {i + 1}
                 </Label>
                 <Input
@@ -267,7 +267,7 @@ function EditImagesDialog({
           {editingImageType === "distant" &&
             (["distant1", "distant2", "distant3"] as const).map((key, i) => (
               <div key={key} className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor={`edit-${key}`} className="text-right">
+                <Label htmlFor={`edit-${key}`} className="text-end">
                   {t.students.images.distantPast} {i + 1}
                 </Label>
                 <Input

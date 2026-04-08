@@ -96,7 +96,7 @@ export function AssignmentsTab({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex space-x-2 space-x-reverse">
+                  <div className="flex gap-2">
                     <Button variant="outline" size="sm">
                       {actions.view}
                     </Button>

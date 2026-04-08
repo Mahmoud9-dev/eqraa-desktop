@@ -74,7 +74,7 @@ const ExamFormDialog = ({
   const examFormFields = (idPrefix: string) => (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-type`} className="text-right">
+        <Label htmlFor={`${idPrefix}-type`} className="text-end">
           {tt.exams.form.typeLabel}
         </Label>
         <Select
@@ -94,7 +94,7 @@ const ExamFormDialog = ({
         </Select>
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-title`} className="text-right">
+        <Label htmlFor={`${idPrefix}-title`} className="text-end">
           {tt.exams.form.titleLabel}
         </Label>
         <Input
@@ -105,7 +105,7 @@ const ExamFormDialog = ({
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-description`} className="text-right">
+        <Label htmlFor={`${idPrefix}-description`} className="text-end">
           {tt.exams.form.descriptionLabel}
         </Label>
         <Textarea
@@ -119,7 +119,7 @@ const ExamFormDialog = ({
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-date`} className="text-right">
+        <Label htmlFor={`${idPrefix}-date`} className="text-end">
           {tt.exams.form.dateLabel}
         </Label>
         <Input
@@ -133,7 +133,7 @@ const ExamFormDialog = ({
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-duration`} className="text-right">
+        <Label htmlFor={`${idPrefix}-duration`} className="text-end">
           {tt.exams.form.durationLabel}
         </Label>
         <Input
@@ -150,7 +150,7 @@ const ExamFormDialog = ({
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-totalMarks`} className="text-right">
+        <Label htmlFor={`${idPrefix}-totalMarks`} className="text-end">
           {tt.exams.form.totalMarksLabel}
         </Label>
         <Input
@@ -167,7 +167,7 @@ const ExamFormDialog = ({
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-passingMarks`} className="text-right">
+        <Label htmlFor={`${idPrefix}-passingMarks`} className="text-end">
           {tt.exams.form.passingMarksLabel}
         </Label>
         <Input

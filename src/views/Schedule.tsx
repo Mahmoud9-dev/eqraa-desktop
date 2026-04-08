@@ -622,7 +622,7 @@ const Schedule = () => {
                               className="flex items-center justify-between p-3 bg-muted rounded-lg"
                             >
                               <div className="flex-1">
-                                <div className="flex items-center space-x-2 space-x-reverse">
+                                <div className="flex items-center gap-2">
                                   <h4 className="font-medium">
                                     {session.title}
                                   </h4>
@@ -644,7 +644,7 @@ const Schedule = () => {
                                   • {session.location}
                                 </div>
                               </div>
-                              <div className="flex space-x-2 space-x-reverse">
+                              <div className="flex gap-2">
                                 <Button
                                   variant="outline"
                                   size="sm"

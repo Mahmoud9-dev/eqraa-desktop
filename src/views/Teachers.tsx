@@ -697,7 +697,7 @@ const Teachers = () => {
                         </div>
                       </div>
 
-                      <div className="flex space-x-2 space-x-reverse">
+                      <div className="flex gap-2">
                         <Button variant="outline" size="sm">
                           {t.teachers.actions.editProfile}
                         </Button>
@@ -766,7 +766,7 @@ const Teachers = () => {
                     <Textarea placeholder={t.teachers.contact.questionPlaceholder} rows={4} />
                   </div>
 
-                  <div className="flex space-x-2 space-x-reverse">
+                  <div className="flex gap-2">
                     <Button className="bg-primary text-primary-foreground">
                       {t.teachers.contact.sendQuestion}
                     </Button>
@@ -788,7 +788,7 @@ const Teachers = () => {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right">
+              <Label htmlFor="edit-name" className="text-end">
                 {t.teachers.form.name}
               </Label>
               <Input
@@ -801,7 +801,7 @@ const Teachers = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-specialization" className="text-right">
+              <Label htmlFor="edit-specialization" className="text-end">
                 {t.teachers.form.specialization}
               </Label>
               <Input
@@ -817,7 +817,7 @@ const Teachers = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-department" className="text-right">
+              <Label htmlFor="edit-department" className="text-end">
                 {t.teachers.form.department}
               </Label>
               <Select
@@ -840,7 +840,7 @@ const Teachers = () => {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-email" className="text-right">
+              <Label htmlFor="edit-email" className="text-end">
                 {t.teachers.form.email}
               </Label>
               <Input
@@ -854,7 +854,7 @@ const Teachers = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-phone" className="text-right">
+              <Label htmlFor="edit-phone" className="text-end">
                 {t.teachers.form.phone}
               </Label>
               <Input
@@ -867,7 +867,7 @@ const Teachers = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-experience" className="text-right">
+              <Label htmlFor="edit-experience" className="text-end">
                 {t.teachers.form.experienceYears}
               </Label>
               <Input

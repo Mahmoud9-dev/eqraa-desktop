@@ -89,7 +89,7 @@ export function AssessmentsTab({
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="assessment-student" className="text-right">
+                <Label htmlFor="assessment-student" className="text-end">
                   {form.student}
                 </Label>
                 <Select
@@ -111,7 +111,7 @@ export function AssessmentsTab({
                 </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="assessment-criteria" className="text-right">
+                <Label htmlFor="assessment-criteria" className="text-end">
                   {form.criteria}
                 </Label>
                 <Input
@@ -124,7 +124,7 @@ export function AssessmentsTab({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="assessment-rating" className="text-right">
+                <Label htmlFor="assessment-rating" className="text-end">
                   {form.ratingOutOf10}
                 </Label>
                 <Input
@@ -143,7 +143,7 @@ export function AssessmentsTab({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="assessment-notes" className="text-right">
+                <Label htmlFor="assessment-notes" className="text-end">
                   {form.notes}
                 </Label>
                 <Textarea
@@ -205,7 +205,7 @@ export function AssessmentsTab({
                   </TableCell>
                   <TableCell>{assessment.notes}</TableCell>
                   <TableCell>
-                    <div className="flex space-x-2 space-x-reverse">
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"

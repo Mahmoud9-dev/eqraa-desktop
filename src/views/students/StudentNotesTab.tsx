@@ -48,7 +48,7 @@ export function StudentNotesTab({
                       className="flex items-start justify-between p-3 bg-muted rounded-lg"
                     >
                       <div className="flex-1">
-                        <div className="flex items-center space-x-2 space-x-reverse mb-1">
+                        <div className="flex items-center gap-2 mb-1">
                           <Badge className={getNoteTypeColor(note.type)}>
                             {note.type === "\u0625\u064A\u062C\u0627\u0628\u064A"
                               ? t.students.notes.positive
@@ -60,7 +60,7 @@ export function StudentNotesTab({
                         </div>
                         <p>{note.content}</p>
                       </div>
-                      <div className="flex space-x-2 space-x-reverse">
+                      <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"

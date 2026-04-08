@@ -62,7 +62,7 @@ export function AssignmentFormDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-assignment-title`} className="text-right">
+            <Label htmlFor={`${mode}-assignment-title`} className="text-end">
               {form.title}
             </Label>
             <Input
@@ -73,7 +73,7 @@ export function AssignmentFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-assignment-type`} className="text-right">
+            <Label htmlFor={`${mode}-assignment-type`} className="text-end">
               {form.type}
             </Label>
             <Select
@@ -90,7 +90,7 @@ export function AssignmentFormDialog({
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-assignment-description`} className="text-right">
+            <Label htmlFor={`${mode}-assignment-description`} className="text-end">
               {form.description}
             </Label>
             <Textarea
@@ -102,7 +102,7 @@ export function AssignmentFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-assignment-dueDate`} className="text-right">
+            <Label htmlFor={`${mode}-assignment-dueDate`} className="text-end">
               {form.dueDate}
             </Label>
             <Input
@@ -114,7 +114,7 @@ export function AssignmentFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-assignment-targetAge`} className="text-right">
+            <Label htmlFor={`${mode}-assignment-targetAge`} className="text-end">
               {form.targetAge}
             </Label>
             <Input
@@ -125,7 +125,7 @@ export function AssignmentFormDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor={`${mode}-assignment-points`} className="text-right">
+            <Label htmlFor={`${mode}-assignment-points`} className="text-end">
               {form.points}
             </Label>
             <Input

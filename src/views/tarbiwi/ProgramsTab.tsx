@@ -81,7 +81,7 @@ export function ProgramsTab({ programs, daysArray, onEdit, onDelete, tb }: Progr
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex space-x-2 space-x-reverse">
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"

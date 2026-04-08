@@ -77,7 +77,7 @@ const ExamResultsTab = ({
                       {tt.exams.results.scoreLabel} {result.marks}/
                       {exam?.totalMarks}
                     </div>
-                    <div className="flex space-x-2 space-x-reverse">
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"

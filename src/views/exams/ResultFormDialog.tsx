@@ -79,7 +79,7 @@ const ResultFormDialog = ({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="student" className="text-right">
+              <Label htmlFor="student" className="text-end">
                 {tt.exams.table.student}
               </Label>
               <Select
@@ -101,7 +101,7 @@ const ResultFormDialog = ({
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="marks" className="text-right">
+              <Label htmlFor="marks" className="text-end">
                 {tt.exams.form.marksLabel}
               </Label>
               <Input
@@ -119,7 +119,7 @@ const ResultFormDialog = ({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="notes" className="text-right">
+              <Label htmlFor="notes" className="text-end">
                 {tt.exams.form.notesLabel}
               </Label>
               <Textarea
@@ -161,7 +161,7 @@ const ResultFormDialog = ({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-marks" className="text-right">
+              <Label htmlFor="edit-marks" className="text-end">
                 {tt.exams.form.marksLabel}
               </Label>
               <Input
@@ -179,7 +179,7 @@ const ResultFormDialog = ({
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-notes" className="text-right">
+              <Label htmlFor="edit-notes" className="text-end">
                 {tt.exams.form.notesLabel}
               </Label>
               <Textarea
