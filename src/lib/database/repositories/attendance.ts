@@ -43,31 +43,41 @@ export async function insertAttendanceRecords(
 
   const db = await getDb();
 
-  for (let chunkStart = 0; chunkStart < records.length; chunkStart += ATTENDANCE_CHUNK_SIZE) {
-    const chunk = records.slice(chunkStart, chunkStart + ATTENDANCE_CHUNK_SIZE);
+  // Wrap the chunked inserts in a transaction so a late-chunk failure
+  // cannot leave partially written batches behind. Callers expect
+  // all-or-nothing semantics for bulk inserts.
+  await db.execute("BEGIN");
+  try {
+    for (let chunkStart = 0; chunkStart < records.length; chunkStart += ATTENDANCE_CHUNK_SIZE) {
+      const chunk = records.slice(chunkStart, chunkStart + ATTENDANCE_CHUNK_SIZE);
 
-    const valuePlaceholders: string[] = [];
-    const params: (string | null)[] = [];
+      const valuePlaceholders: string[] = [];
+      const params: (string | null)[] = [];
 
-    chunk.forEach((record, index) => {
-      const base = index * 6;
-      valuePlaceholders.push(
-        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`
+      chunk.forEach((record, index) => {
+        const base = index * 6;
+        valuePlaceholders.push(
+          `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`
+        );
+        params.push(
+          uuid(),
+          record.student_id ?? null,
+          record.teacher_id ?? null,
+          record.record_date,
+          record.status,
+          record.notes ?? null
+        );
+      });
+
+      await db.execute(
+        `INSERT INTO attendance_records (id, student_id, teacher_id, record_date, status, notes) VALUES ${valuePlaceholders.join(", ")}`,
+        params
       );
-      params.push(
-        uuid(),
-        record.student_id ?? null,
-        record.teacher_id ?? null,
-        record.record_date,
-        record.status,
-        record.notes ?? null
-      );
-    });
-
-    await db.execute(
-      `INSERT INTO attendance_records (id, student_id, teacher_id, record_date, status, notes) VALUES ${valuePlaceholders.join(", ")}`,
-      params
-    );
+    }
+    await db.execute("COMMIT");
+  } catch (error) {
+    await db.execute("ROLLBACK");
+    throw error;
   }
 }
 
@@ -86,8 +96,10 @@ export async function getAttendanceRecordsPaginated(
   );
   const total = countResult[0].count;
 
+  // record_date alone is not unique, so add a stable tie-breaker to
+  // keep page boundaries deterministic across queries.
   const data = await db.select<AttendanceRecord[]>(
-    `SELECT * FROM attendance_records ${whereClause} ORDER BY record_date DESC ${clause}`,
+    `SELECT * FROM attendance_records ${whereClause} ORDER BY record_date DESC, created_at DESC, id DESC ${clause}`,
     whereArgs
   );
 
