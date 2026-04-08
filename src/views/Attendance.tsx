@@ -121,7 +121,7 @@ const Attendance = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<AttendancePeriod>('month');
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const { page, pageSize, nextPage, prevPage, goToPage, resetPage } = usePagination({ initialPageSize: 50 });
+  const { page, pageSize, nextPage, prevPage, goToPage, setPage, resetPage } = usePagination({ initialPageSize: 50 });
 
   // Label map for DB attendance status values
   const statusLabels: Record<string, string> = {
@@ -249,6 +249,11 @@ const Attendance = () => {
         pageSize,
         startDate,
       });
+      const safeTotalPages = Math.max(1, result.totalPages);
+      if (page > safeTotalPages) {
+        setPage(safeTotalPages);
+        return;
+      }
       const transformedRecords: AttendanceRecord[] = result.data.map((r) => ({
         ...r,
         studentId: r.student_id || "",
@@ -262,7 +267,7 @@ const Attendance = () => {
     } catch (error) {
       logger.error("Error loading attendance records:", error);
     }
-  }, [page, pageSize, selectedPeriod]);
+  }, [page, pageSize, selectedPeriod, setPage]);
 
   // Load all data on mount
   useEffect(() => {
@@ -279,11 +284,15 @@ const Attendance = () => {
     getAttendanceTrend(PERIOD_DAYS[selectedPeriod]).then(setTrendData).catch((err: unknown) => logger.error("Failed to fetch attendance trend", err));
   }, [selectedPeriod]);
 
-  // Reset pagination whenever the period cutoff changes so the user
-  // doesn't land on a stale page beyond the filtered totalPages.
-  useEffect(() => {
-    resetPage();
-  }, [selectedPeriod, resetPage]);
+  // Reset pagination synchronously before updating selectedPeriod so
+  // loadAttendanceRecords never races against a stale page.
+  const applyPeriod = useCallback(
+    (next: AttendancePeriod) => {
+      resetPage();
+      setSelectedPeriod(next);
+    },
+    [resetPage],
+  );
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch = student.name
@@ -497,7 +506,7 @@ const Attendance = () => {
               <ToggleGroup
                 type="single"
                 value={selectedPeriod}
-                onValueChange={(v) => { if (v) setSelectedPeriod(v as AttendancePeriod); }}
+                onValueChange={(v) => { if (v) applyPeriod(v as AttendancePeriod); }}
                 className="gap-1"
               >
                 {(Object.keys(PERIOD_DAYS) as AttendancePeriod[]).map((key) => (
