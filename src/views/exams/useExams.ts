@@ -33,10 +33,27 @@ const DEFAULT_RESULT_FORM: Partial<ExamResult> = {
   examId: "", studentId: "", marks: 0, percentage: 0, status: "\u0646\u0627\u062c\u062d", notes: "",
 };
 
+/** Strip the time portion of a Date so comparisons are calendar-day-only. */
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 export const examStatusFilters = [
-  { key: "upcoming" as const, filter: (d: Date, now: Date) => d > now },
-  { key: "today" as const, filter: (d: Date, now: Date) => d.toDateString() === now.toDateString() },
-  { key: "completed" as const, filter: (d: Date, now: Date) => d < now },
+  {
+    key: "today" as const,
+    filter: (d: Date, now: Date) =>
+      startOfDay(d).getTime() === startOfDay(now).getTime(),
+  },
+  {
+    key: "upcoming" as const,
+    filter: (d: Date, now: Date) =>
+      startOfDay(d).getTime() > startOfDay(now).getTime(),
+  },
+  {
+    key: "completed" as const,
+    filter: (d: Date, now: Date) =>
+      startOfDay(d).getTime() < startOfDay(now).getTime(),
+  },
 ];
 
 export function getStatusColor(status: string): string {
@@ -49,25 +66,25 @@ export function getStatusColor(status: string): string {
 }
 
 export function getExamStatusColor(exam: Exam): string {
-  const examDate = new Date(exam.date);
-  const today = new Date();
-  if (examDate < today) return "bg-gray-100 text-gray-800";
-  if (examDate.toDateString() === today.toDateString()) return "bg-blue-100 text-blue-800";
+  const examDay = startOfDay(new Date(exam.date)).getTime();
+  const today = startOfDay(new Date()).getTime();
+  if (examDay === today) return "bg-blue-100 text-blue-800";
+  if (examDay < today) return "bg-gray-100 text-gray-800";
   return "bg-yellow-100 text-yellow-800";
 }
 
 /**
  * Shared pass/fail evaluation so add and edit result paths cannot drift.
- * Compares percentage against the exam's passing percentage
- * (passingMarks / totalMarks * 100), not against raw passingMarks.
+ * Status is derived from raw marks vs passingMarks to avoid rounding
+ * edge cases (e.g. 34.75/50 with a 35 threshold would round to 70% and
+ * flip to pass if the comparison used the rounded percentage).
  */
 export function evaluateResult(
   marks: number,
   exam: Pick<Exam, "totalMarks" | "passingMarks">,
 ): { percentage: number; status: "\u0646\u0627\u062c\u062d" | "\u0631\u0627\u0633\u0628" } {
   const percentage = Math.round((marks / exam.totalMarks) * 100);
-  const passingPercentage = (exam.passingMarks / exam.totalMarks) * 100;
-  const status = percentage >= passingPercentage ? "\u0646\u0627\u062c\u062d" : "\u0631\u0627\u0633\u0628";
+  const status = marks >= exam.passingMarks ? "\u0646\u0627\u062c\u062d" : "\u0631\u0627\u0633\u0628";
   return { percentage, status };
 }
 
@@ -263,6 +280,15 @@ export function useExams() {
     const exam = exams.find((e) => e.id === newResult.examId);
     if (!exam) return;
 
+    if (newResult.marks < 0 || newResult.marks > exam.totalMarks) {
+      toast({
+        title: t.exams.toasts.error,
+        description: t.exams.toasts.requiredFields,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { percentage, status } = evaluateResult(newResult.marks, exam);
 
     const result: ExamResult = {
@@ -300,6 +326,15 @@ export function useExams() {
     if (!exam) return;
 
     const marks = newResult.marks;
+    if (marks < 0 || marks > exam.totalMarks) {
+      toast({
+        title: t.exams.toasts.error,
+        description: t.exams.toasts.requiredFields,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { percentage, status } = evaluateResult(marks, exam);
 
     setExamResults((prev) =>
