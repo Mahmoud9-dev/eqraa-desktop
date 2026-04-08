@@ -72,6 +72,8 @@ const QuranCirclesView = () => {
               <Input
                 placeholder={qc.searchPlaceholder}
                 className="w-full sm:w-64"
+                value={hook.searchTerm}
+                onChange={(e) => hook.setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex flex-col sm:flex-row gap-2">

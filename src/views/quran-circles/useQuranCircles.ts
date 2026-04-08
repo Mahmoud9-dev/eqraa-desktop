@@ -154,6 +154,7 @@ export function useQuranCircles() {
 
   // Tab state
   const [activeTab, setActiveTab] = useState("circles");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Dialog visibility state
   const [isAddCircleDialogOpen, setIsAddCircleDialogOpen] = useState(false);
@@ -226,7 +227,7 @@ export function useQuranCircles() {
       dailyMemorization: newCircle.dailyMemorization || "",
       dailyRevision: newCircle.dailyRevision || "",
       weeklyEvaluation: newCircle.weeklyEvaluation || "",
-      isActive: newCircle.isActive || true,
+      isActive: newCircle.isActive ?? true,
       createdAt: new Date(),
     };
 
@@ -262,10 +263,7 @@ export function useQuranCircles() {
               dailyRevision: newCircle.dailyRevision || circle.dailyRevision,
               weeklyEvaluation:
                 newCircle.weeklyEvaluation || circle.weeklyEvaluation,
-              isActive:
-                newCircle.isActive !== undefined
-                  ? newCircle.isActive
-                  : circle.isActive,
+              isActive: newCircle.isActive ?? circle.isActive,
             }
           : circle
       )
@@ -307,7 +305,7 @@ export function useQuranCircles() {
       circleId: newMember.circleId || "",
       studentId: newMember.studentId || "",
       joinDate: new Date(),
-      isActive: newMember.isActive || true,
+      isActive: newMember.isActive ?? true,
     };
 
     setCircleMembers((prev) => [...prev, member]);
@@ -353,6 +351,59 @@ export function useQuranCircles() {
     });
   }, [newRecord, toast, qc]);
 
+  const handleEditRecord = useCallback(
+    (record: MemorizationRecord) => {
+      setNewRecord({
+        studentId: record.studentId,
+        circleId: record.circleId,
+        date: new Date(record.date),
+        surahName: record.surahName,
+        versesFrom: record.versesFrom,
+        versesTo: record.versesTo,
+        memorizationType: record.memorizationType,
+        evaluation: record.evaluation,
+        notes: record.notes,
+      });
+      setMemorizationRecords((prev) => prev.filter((r) => r.id !== record.id));
+      setIsAddRecordDialogOpen(true);
+    },
+    [],
+  );
+
+  const handleDeleteRecord = useCallback(
+    (record: MemorizationRecord) => {
+      setMemorizationRecords((prev) => prev.filter((r) => r.id !== record.id));
+      toast({
+        title: qc.toast.deletedTitle,
+        description: qc.toast.recordDeleted,
+      });
+    },
+    [toast, qc],
+  );
+
+  // Filtered collections (search)
+  const filteredCircles = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return circles;
+    return circles.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.description ?? "").toLowerCase().includes(q),
+    );
+  }, [circles, searchTerm]);
+
+  const filteredRecords = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return memorizationRecords;
+    return memorizationRecords.filter((r) => {
+      const studentName = students[r.studentId] ?? "";
+      return (
+        studentName.toLowerCase().includes(q) ||
+        r.surahName.toLowerCase().includes(q)
+      );
+    });
+  }, [memorizationRecords, searchTerm]);
+
   const openEditCircleDialog = useCallback((circle: QuranCircle) => {
     setSelectedCircle(circle);
     setNewCircle({
@@ -384,10 +435,15 @@ export function useQuranCircles() {
     // Tab
     activeTab,
     setActiveTab,
+    // Search
+    searchTerm,
+    setSearchTerm,
     // Data
     circles,
+    filteredCircles,
     circleMembers,
     memorizationRecords,
+    filteredRecords,
     // Dialogs
     isAddCircleDialogOpen,
     setIsAddCircleDialogOpen,
@@ -418,6 +474,8 @@ export function useQuranCircles() {
     handleDeleteCircle,
     handleAddMember,
     handleAddRecord,
+    handleEditRecord,
+    handleDeleteRecord,
     openEditCircleDialog,
     openDeleteCircleDialog,
   };

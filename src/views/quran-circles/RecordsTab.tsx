@@ -47,13 +47,15 @@ export function RecordsTab({ hook }: RecordsTabProps) {
     language,
     circles,
     students,
-    memorizationRecords,
+    filteredRecords: memorizationRecords,
     memorizationTypeLabel,
     isAddRecordDialogOpen,
     setIsAddRecordDialogOpen,
     newRecord,
     setNewRecord,
     handleAddRecord,
+    handleEditRecord,
+    handleDeleteRecord,
     getEvaluationColor,
     getMemorizationTypeColor,
   } = hook;
@@ -300,6 +302,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                     variant="outline"
                     size="sm"
                     className="flex-1 text-xs"
+                    onClick={() => handleEditRecord(record)}
                   >
                     {qc.actions.edit}
                   </Button>
@@ -307,6 +310,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                     variant="destructive"
                     size="sm"
                     className="flex-1 text-xs"
+                    onClick={() => handleDeleteRecord(record)}
                   >
                     {qc.actions.delete}
                   </Button>
@@ -373,6 +377,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                           variant="outline"
                           size="sm"
                           className="text-xs px-2"
+                          onClick={() => handleEditRecord(record)}
                         >
                           {qc.actions.edit}
                         </Button>
@@ -380,6 +385,7 @@ export function RecordsTab({ hook }: RecordsTabProps) {
                           variant="destructive"
                           size="sm"
                           className="text-xs px-2"
+                          onClick={() => handleDeleteRecord(record)}
                         >
                           {qc.actions.delete}
                         </Button>

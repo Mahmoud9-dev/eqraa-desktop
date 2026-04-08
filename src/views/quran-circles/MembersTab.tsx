@@ -41,7 +41,7 @@ export function MembersTab({ hook }: MembersTabProps) {
               <div>
                 <div>{circle.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  {teachers[circle.supervisorId]}
+                  {teachers[circle.supervisorId] ?? "—"}
                 </div>
               </div>
             </CardTitle>
@@ -70,7 +70,7 @@ export function MembersTab({ hook }: MembersTabProps) {
                         </Avatar>
                         <div className="min-w-0">
                           <div className="font-medium text-sm truncate">
-                            {students[member.studentId]}
+                            {students[member.studentId] ?? "—"}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {qc.members.joinedPrefix}{" "}

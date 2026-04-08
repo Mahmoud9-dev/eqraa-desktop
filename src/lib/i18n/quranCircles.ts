@@ -144,6 +144,7 @@ export interface QuranCirclesTranslations {
     circleDeleted: string;
     memberAdded: string;
     recordAdded: string;
+    recordDeleted: string;
   };
 }
 
@@ -292,6 +293,7 @@ export const quranCircles: Record<Language, QuranCirclesTranslations> = {
       circleDeleted: 'تم حذف الحلقة بنجاح',
       memberAdded: 'تم إضافة الطالب للحلقة بنجاح',
       recordAdded: 'تم إضافة سجل الحفظ بنجاح',
+      recordDeleted: 'تم حذف سجل الحفظ بنجاح',
     },
   },
 
@@ -439,6 +441,7 @@ export const quranCircles: Record<Language, QuranCirclesTranslations> = {
       circleDeleted: 'Circle deleted successfully',
       memberAdded: 'Student added to circle successfully',
       recordAdded: 'Memorization record added successfully',
+      recordDeleted: 'Memorization record deleted successfully',
     },
   },
 };

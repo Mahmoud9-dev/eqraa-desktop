@@ -24,7 +24,7 @@ interface CirclesTabProps {
 export function CirclesTab({ hook }: CirclesTabProps) {
   const {
     qc,
-    circles,
+    filteredCircles: circles,
     teachers,
     getCircleMembers,
     openEditCircleDialog,
@@ -58,7 +58,7 @@ export function CirclesTab({ hook }: CirclesTabProps) {
               </div>
               <div className="text-sm text-muted-foreground">
                 {qc.circleCard.supervisor}{" "}
-                {teachers[circle.supervisorId]}
+                {teachers[circle.supervisorId] ?? "—"}
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2 bg-muted rounded">
@@ -85,6 +85,7 @@ export function CirclesTab({ hook }: CirclesTabProps) {
                   variant="outline"
                   size="sm"
                   className="flex-1 text-xs"
+                  onClick={() => openEditCircleDialog(circle)}
                 >
                   {qc.actions.view}
                 </Button>
@@ -134,7 +135,7 @@ export function CirclesTab({ hook }: CirclesTabProps) {
                     {circle.name}
                   </TableCell>
                   <TableCell>
-                    {teachers[circle.supervisorId]}
+                    {teachers[circle.supervisorId] ?? "—"}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {circle.dailyMemorization}
@@ -164,6 +165,7 @@ export function CirclesTab({ hook }: CirclesTabProps) {
                         variant="outline"
                         size="sm"
                         className="text-xs px-2"
+                        onClick={() => openEditCircleDialog(circle)}
                       >
                         {qc.actions.view}
                       </Button>
