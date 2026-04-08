@@ -56,8 +56,24 @@ export function getExamStatusColor(exam: Exam): string {
   return "bg-yellow-100 text-yellow-800";
 }
 
+/**
+ * Shared pass/fail evaluation so add and edit result paths cannot drift.
+ * Compares percentage against the exam's passing percentage
+ * (passingMarks / totalMarks * 100), not against raw passingMarks.
+ */
+export function evaluateResult(
+  marks: number,
+  exam: Pick<Exam, "totalMarks" | "passingMarks">,
+): { percentage: number; status: "\u0646\u0627\u062c\u062d" | "\u0631\u0627\u0633\u0628" } {
+  const percentage = Math.round((marks / exam.totalMarks) * 100);
+  const passingPercentage = (exam.passingMarks / exam.totalMarks) * 100;
+  const status = percentage >= passingPercentage ? "\u0646\u0627\u062c\u062d" : "\u0631\u0627\u0633\u0628";
+  return { percentage, status };
+}
+
 export function useExams() {
   const [activeTab, setActiveTab] = useState<TabType>("\u0642\u0631\u0622\u0646");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -74,18 +90,36 @@ export function useExams() {
   const [newExam, setNewExam] = useState<Partial<Exam>>(DEFAULT_EXAM_FORM);
   const [newResult, setNewResult] = useState<Partial<ExamResult>>(DEFAULT_RESULT_FORM);
 
-  const filteredExams = useMemo(
-    () => exams.filter((exam) => exam.type === activeTab),
-    [exams, activeTab],
-  );
+  const filteredExams = useMemo(() => {
+    const byType = exams.filter((exam) => exam.type === activeTab);
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return byType;
+    return byType.filter(
+      (exam) =>
+        exam.title.toLowerCase().includes(q) ||
+        (exam.description ?? "").toLowerCase().includes(q),
+    );
+  }, [exams, activeTab, searchTerm]);
 
   const filteredResults = useMemo(() => {
-    if (activeTab === "results") return examResults;
-    return examResults.filter((result) => {
+    const base =
+      activeTab === "results"
+        ? examResults
+        : examResults.filter((result) => {
+            const exam = exams.find((e) => e.id === result.examId);
+            return exam && exam.type === activeTab;
+          });
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter((result) => {
       const exam = exams.find((e) => e.id === result.examId);
-      return exam && exam.type === activeTab;
+      const studentName = students[result.studentId] ?? "";
+      return (
+        (exam?.title.toLowerCase().includes(q) ?? false) ||
+        studentName.toLowerCase().includes(q)
+      );
     });
-  }, [examResults, exams, activeTab]);
+  }, [examResults, exams, activeTab, searchTerm]);
 
   const getExamStatusText = useCallback(
     (exam: Exam): string => {
@@ -150,7 +184,7 @@ export function useExams() {
       totalMarks: newExam.totalMarks || 100,
       passingMarks: newExam.passingMarks || 60,
       createdBy: "current_user",
-      isActive: newExam.isActive || true,
+      isActive: newExam.isActive ?? true,
       createdAt: new Date(),
     };
 
@@ -224,8 +258,7 @@ export function useExams() {
     const exam = exams.find((e) => e.id === newResult.examId);
     if (!exam) return;
 
-    const percentage = Math.round((newResult.marks / exam.totalMarks) * 100);
-    const status = percentage >= exam.passingMarks ? "\u0646\u0627\u062c\u062d" : "\u0631\u0627\u0633\u0628";
+    const { percentage, status } = evaluateResult(newResult.marks, exam);
 
     const result: ExamResult = {
       id: Date.now().toString(),
@@ -249,7 +282,7 @@ export function useExams() {
   }, [newResult, exams, toast, t, resetResultForm]);
 
   const handleEditResult = useCallback(() => {
-    if (!selectedResult || !newResult.marks) {
+    if (!selectedResult || newResult.marks === undefined) {
       toast({
         title: t.exams.toasts.error,
         description: t.exams.toasts.requiredFields,
@@ -261,16 +294,13 @@ export function useExams() {
     const exam = exams.find((e) => e.id === selectedResult.examId);
     if (!exam) return;
 
-    const percentage = Math.round((newResult.marks / exam.totalMarks) * 100);
-    const status =
-      percentage >= (exam.passingMarks / exam.totalMarks) * 100
-        ? "\u0646\u0627\u062c\u062d"
-        : "\u0631\u0627\u0633\u0628";
+    const marks = newResult.marks;
+    const { percentage, status } = evaluateResult(marks, exam);
 
     setExamResults((prev) =>
       prev.map((r) =>
         r.id === selectedResult.id
-          ? { ...r, marks: newResult.marks!, percentage, status, notes: newResult.notes }
+          ? { ...r, marks, percentage, status, notes: newResult.notes }
           : r,
       ),
     );
@@ -333,7 +363,8 @@ export function useExams() {
   }, []);
 
   return {
-    activeTab, setActiveTab, exams, examResults, filteredExams, filteredResults,
+    activeTab, setActiveTab, searchTerm, setSearchTerm,
+    exams, examResults, filteredExams, filteredResults,
     selectedExam, selectedResult, newExam, setNewExam, newResult, setNewResult, students,
     isAddDialogOpen, setIsAddDialogOpen, isEditDialogOpen, setIsEditDialogOpen,
     isDeleteDialogOpen, setIsDeleteDialogOpen, isResultDialogOpen, setIsResultDialogOpen,

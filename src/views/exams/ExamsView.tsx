@@ -18,6 +18,8 @@ const ExamsView = () => {
   const {
     activeTab,
     setActiveTab,
+    searchTerm,
+    setSearchTerm,
     exams,
     filteredExams,
     filteredResults,
@@ -75,6 +77,8 @@ const ExamsView = () => {
               <Input
                 placeholder={t.exams.searchPlaceholder}
                 className="w-full sm:w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

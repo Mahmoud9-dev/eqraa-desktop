@@ -107,13 +107,14 @@ const ResultFormDialog = ({
               <Input
                 id="marks"
                 type="number"
-                value={newResult.marks}
-                onChange={(e) =>
+                value={newResult.marks ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
                   setNewResult({
                     ...newResult,
-                    marks: parseInt(e.target.value) || 0,
-                  })
-                }
+                    marks: raw === "" ? undefined : Number(raw),
+                  });
+                }}
                 className="col-span-3"
               />
             </div>
@@ -123,7 +124,7 @@ const ResultFormDialog = ({
               </Label>
               <Textarea
                 id="notes"
-                value={newResult.notes}
+                value={newResult.notes ?? ""}
                 onChange={(e) =>
                   setNewResult({ ...newResult, notes: e.target.value })
                 }
@@ -166,13 +167,14 @@ const ResultFormDialog = ({
               <Input
                 id="edit-marks"
                 type="number"
-                value={newResult.marks}
-                onChange={(e) =>
+                value={newResult.marks ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
                   setNewResult({
                     ...newResult,
-                    marks: parseInt(e.target.value) || 0,
-                  })
-                }
+                    marks: raw === "" ? undefined : Number(raw),
+                  });
+                }}
                 className="col-span-3"
               />
             </div>
@@ -182,7 +184,7 @@ const ResultFormDialog = ({
               </Label>
               <Textarea
                 id="edit-notes"
-                value={newResult.notes}
+                value={newResult.notes ?? ""}
                 onChange={(e) =>
                   setNewResult({ ...newResult, notes: e.target.value })
                 }
