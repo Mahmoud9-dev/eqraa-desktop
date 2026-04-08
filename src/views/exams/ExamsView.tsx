@@ -148,7 +148,6 @@ const ExamsView = () => {
               getResultStatusLabel={getResultStatusLabel}
               openEditResultDialog={openEditResultDialog}
               openDeleteResultDialog={openDeleteResultDialog}
-              t={t as unknown as Record<string, unknown>}
             />
           </TabsContent>
         </Tabs>

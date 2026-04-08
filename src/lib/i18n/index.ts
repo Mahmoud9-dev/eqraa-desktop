@@ -32,6 +32,7 @@ export { type QuranTranslations, quran } from './quran';
 export { type ScheduleTranslations, schedule } from './schedule';
 export { type SubjectsTranslations, subjects as subjectsI18n } from './subjects';
 export { type EducationalTranslations, educational } from './educational';
+export { type EducationalSeedsTranslations, educationalSeeds } from './educationalSeeds';
 export { type LibraryTranslations, library } from './library';
 export { type QuranCirclesTranslations, quranCircles } from './quranCircles';
 export { type TarbiwiTranslations, tarbiwi } from './tarbiwi';
@@ -74,6 +75,7 @@ import type { QuranTranslations } from './quran';
 import type { ScheduleTranslations } from './schedule';
 import type { SubjectsTranslations } from './subjects';
 import type { EducationalTranslations } from './educational';
+import type { EducationalSeedsTranslations } from './educationalSeeds';
 import type { LibraryTranslations } from './library';
 import type { QuranCirclesTranslations } from './quranCircles';
 import type { TarbiwiTranslations } from './tarbiwi';
@@ -100,6 +102,7 @@ import { quran } from './quran';
 import { schedule } from './schedule';
 import { subjects as subjectsI18n } from './subjects';
 import { educational } from './educational';
+import { educationalSeeds } from './educationalSeeds';
 import { library } from './library';
 import { quranCircles } from './quranCircles';
 import { tarbiwi } from './tarbiwi';
@@ -129,6 +132,7 @@ export interface Translations {
   schedule: ScheduleTranslations;
   subjects: SubjectsTranslations;
   educational: EducationalTranslations;
+  educationalSeeds: EducationalSeedsTranslations;
   library: LibraryTranslations;
   quranCircles: QuranCirclesTranslations;
   tarbiwi: TarbiwiTranslations;
@@ -158,6 +162,7 @@ export const translations: Record<Language, Translations> = {
     schedule: schedule.ar,
     subjects: subjectsI18n.ar,
     educational: educational.ar,
+    educationalSeeds: educationalSeeds.ar,
     library: library.ar,
     quranCircles: quranCircles.ar,
     tarbiwi: tarbiwi.ar,
@@ -185,6 +190,7 @@ export const translations: Record<Language, Translations> = {
     schedule: schedule.en,
     subjects: subjectsI18n.en,
     educational: educational.en,
+    educationalSeeds: educationalSeeds.en,
     library: library.en,
     quranCircles: quranCircles.en,
     tarbiwi: tarbiwi.en,

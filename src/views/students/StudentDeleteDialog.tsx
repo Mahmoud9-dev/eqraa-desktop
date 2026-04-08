@@ -23,7 +23,7 @@ export function StudentDeleteDialog({
   selectedStudent,
   onConfirm,
 }: StudentDeleteDialogProps) {
-  const { t } = useLanguage();
+  const { t, tFunc } = useLanguage();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -31,10 +31,9 @@ export function StudentDeleteDialog({
         <DialogHeader>
           <DialogTitle>{t.students.confirmDelete}</DialogTitle>
           <DialogDescription>
-            {t.students.deleteConfirmMessage.replace(
-              "{{name}}",
-              selectedStudent?.name ?? ""
-            )}
+            {tFunc("students.deleteConfirmMessage", {
+              name: selectedStudent?.name ?? "",
+            })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Exam, ExamResult } from "@/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { getStatusColor } from "./useExams";
 
 interface ExamResultsTabProps {
@@ -17,7 +18,6 @@ interface ExamResultsTabProps {
   getResultStatusLabel: (status: string) => string;
   openEditResultDialog: (result: ExamResult) => void;
   openDeleteResultDialog: (result: ExamResult) => void;
-  t: Record<string, unknown>;
 }
 
 const ExamResultsTab = ({
@@ -27,28 +27,9 @@ const ExamResultsTab = ({
   getResultStatusLabel,
   openEditResultDialog,
   openDeleteResultDialog,
-  t,
 }: ExamResultsTabProps) => {
-  const tt = t as {
-    exams: {
-      results: {
-        title: string;
-        description: string;
-        scoreLabel: string;
-      };
-      stats: {
-        title: string;
-        description: string;
-        passRate: string;
-        averageScore: string;
-        totalExams: string;
-      };
-      actions: {
-        edit: string;
-        delete: string;
-      };
-    };
-  };
+  const { t } = useLanguage();
+  const tt = t;
 
   const passRate =
     filteredResults.length > 0
