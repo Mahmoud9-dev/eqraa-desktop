@@ -71,18 +71,24 @@ export async function deleteMeeting(id: string): Promise<void> {
 }
 
 export async function getMeetingsPaginated(
-  params: PaginationParams
+  params: PaginationParams & { type?: string }
 ): Promise<PaginatedResponse<Meeting>> {
   const db = await getDb();
   const { clause } = paginationClause(params);
 
+  // Build WHERE clause + bind args so the COUNT and SELECT stay in lockstep.
+  const whereClause = params.type ? "WHERE type = $1" : "";
+  const whereArgs: string[] = params.type ? [params.type] : [];
+
   const countResult = await db.select<[{ count: number }]>(
-    "SELECT COUNT(*) as count FROM meetings"
+    `SELECT COUNT(*) as count FROM meetings ${whereClause}`,
+    whereArgs
   );
   const total = countResult[0].count;
 
   const data = await db.select<Meeting[]>(
-    `SELECT * FROM meetings ORDER BY meeting_date DESC ${clause}`
+    `SELECT * FROM meetings ${whereClause} ORDER BY meeting_date DESC ${clause}`,
+    whereArgs
   );
 
   return {

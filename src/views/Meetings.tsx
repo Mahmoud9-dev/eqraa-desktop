@@ -50,7 +50,7 @@ const Meetings = () => {
   const [filterType, setFilterType] = useState<string>("all");
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const { page, pageSize, nextPage, prevPage } = usePagination({ initialPageSize: 20 });
+  const { page, pageSize, nextPage, prevPage, resetPage } = usePagination({ initialPageSize: 20 });
   const { toast } = useToast();
   const { t, tFunc, languageMeta } = useLanguage();
 
@@ -68,20 +68,30 @@ const Meetings = () => {
 
   const loadMeetings = useCallback(async () => {
     try {
-      const result = await getMeetingsPaginated({ page, pageSize });
+      const result = await getMeetingsPaginated({
+        page,
+        pageSize,
+        type: filterType === "all" ? undefined : filterType,
+      });
       setMeetings(result.data as MeetingItem[]);
       setTotalRecords(result.total);
       setTotalPages(result.totalPages);
     } catch {
       // silently handle
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, filterType]);
 
   useEffect(() => {
     // data fetch on mount — setState after await is safe, rule false-positives
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMeetings();
   }, [loadMeetings]);
+
+  // Reset pagination whenever the type filter changes so the user doesn't
+  // land on e.g. page 3 of a newly-filtered dataset with no results.
+  useEffect(() => {
+    resetPage();
+  }, [filterType, resetPage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,10 +150,9 @@ const Meetings = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const filteredMeetings =
-    filterType === "all"
-      ? meetings
-      : meetings.filter((meeting) => meeting.type === filterType);
+  // Filtering moved into the paginated repo query, so `meetings` is
+  // already the filtered slice for the current page.
+  const filteredMeetings = meetings;
 
   return (
     <div className="min-h-screen bg-background">
@@ -411,11 +420,7 @@ const Meetings = () => {
               <p className="text-sm text-muted-foreground">
                 {tFunc("common.showingResults", {
                   count: filteredMeetings.length,
-                  // When a filter is active the server-side total no longer
-                  // reflects the visible slice — fall back to the filtered
-                  // length so the counter doesn't read "3 of 42".
-                  total:
-                    filterType === "all" ? totalRecords : filteredMeetings.length,
+                  total: totalRecords,
                 })}
               </p>
               <div className="flex items-center gap-2">
