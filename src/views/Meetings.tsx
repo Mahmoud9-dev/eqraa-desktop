@@ -50,7 +50,7 @@ const Meetings = () => {
   const [filterType, setFilterType] = useState<string>("all");
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const { page, pageSize, nextPage, prevPage, resetPage } = usePagination({ initialPageSize: 20 });
+  const { page, pageSize, nextPage, prevPage, setPage, resetPage } = usePagination({ initialPageSize: 20 });
   const { toast } = useToast();
   const { t, tFunc, languageMeta } = useLanguage();
 
@@ -73,13 +73,22 @@ const Meetings = () => {
         pageSize,
         type: filterType === "all" ? undefined : filterType,
       });
+      // If the current page is now beyond the filtered totalPages (e.g.
+      // a delete removed the last row on this page), clamp to the last
+      // valid page and let the page-change effect re-fetch. Don't commit
+      // the empty slice — it would hide the paginator prematurely.
+      const safeTotalPages = Math.max(1, result.totalPages);
+      if (page > safeTotalPages) {
+        setPage(safeTotalPages);
+        return;
+      }
       setMeetings(result.data as MeetingItem[]);
       setTotalRecords(result.total);
       setTotalPages(result.totalPages);
     } catch {
       // silently handle
     }
-  }, [page, pageSize, filterType]);
+  }, [page, pageSize, filterType, setPage]);
 
   useEffect(() => {
     // data fetch on mount — setState after await is safe, rule false-positives
@@ -87,11 +96,16 @@ const Meetings = () => {
     loadMeetings();
   }, [loadMeetings]);
 
-  // Reset pagination whenever the type filter changes so the user doesn't
-  // land on e.g. page 3 of a newly-filtered dataset with no results.
-  useEffect(() => {
-    resetPage();
-  }, [filterType, resetPage]);
+  // Resetting the page is handled synchronously inside applyFilter below
+  // so loadMeetings never races against a stale `page` value when the
+  // user changes the filter.
+  const applyFilter = useCallback(
+    (next: string) => {
+      resetPage();
+      setFilterType(next);
+    },
+    [resetPage],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,7 +270,7 @@ const Meetings = () => {
                     : "bg-primary/5 hover:bg-primary/10"
                 }`}
                 onClick={() =>
-                  setFilterType(filterType === "المعلمين" ? "all" : "المعلمين")
+                  applyFilter(filterType === "المعلمين" ? "all" : "المعلمين")
                 }
               >
                 <div className="text-xl sm:text-2xl">👨‍🏫</div>
@@ -276,7 +290,7 @@ const Meetings = () => {
                     : "bg-primary/5 hover:bg-primary/10"
                 }`}
                 onClick={() =>
-                  setFilterType(
+                  applyFilter(
                     filterType === "أولياء الأمور" ? "all" : "أولياء الأمور"
                   )
                 }
@@ -298,7 +312,7 @@ const Meetings = () => {
                     : "bg-primary/5 hover:bg-primary/10"
                 }`}
                 onClick={() =>
-                  setFilterType(filterType === "إدارية" ? "all" : "إدارية")
+                  applyFilter(filterType === "إدارية" ? "all" : "إدارية")
                 }
               >
                 <div className="text-xl sm:text-2xl">⚙️</div>
@@ -324,7 +338,7 @@ const Meetings = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setFilterType("all")}
+                onClick={() => applyFilter("all")}
                 className="text-xs sm:text-sm"
               >
                 {t.meetings.sections.viewAll}
