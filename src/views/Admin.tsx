@@ -52,6 +52,7 @@ const Admin = () => {
   }, [toast, t]);
 
   useEffect(() => {
+    // data fetch on mount — setState after await is safe, rule false-positives
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [loadData]);

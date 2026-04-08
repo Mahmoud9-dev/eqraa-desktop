@@ -89,10 +89,12 @@ const Teachers = () => {
   }, []);
 
   useEffect(() => {
+    // data fetch on mount — setState after await is safe, rule false-positives
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTeachers();
-     
-    getTeacherWorkload().then(setWorkloadData).catch((err: unknown) => logger.error("Failed to fetch teacher workload", err));
+    getTeacherWorkload()
+      .then(setWorkloadData)
+      .catch((err: unknown) => logger.error("Failed to fetch teacher workload", err));
   }, [loadTeachers]);
 
   // Extended teacher data for display
