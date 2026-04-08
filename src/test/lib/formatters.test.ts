@@ -74,6 +74,23 @@ describe("formatDateISO", () => {
     const result = formatDateISO(date);
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  it("should use local-time date components, not UTC", () => {
+    // Local-time constructor: this is Jan 15 in the runtime's local timezone.
+    // toISOString().split("T")[0] would return the previous day in any
+    // timezone west of UTC for dates near midnight.
+    const localDate = new Date(2026, 0, 15, 0, 30); // 00:30 local on Jan 15
+    const result = formatDateISO(localDate);
+    expect(result).toBe("2026-01-15");
+  });
+
+  it("should preserve the calendar day near midnight regardless of offset", () => {
+    // Construct a date that is late-night local on Dec 31 — toISOString-based
+    // formatters would roll this into Jan 1 of the next year in UTC+ offsets.
+    const localDate = new Date(2026, 11, 31, 23, 30); // 23:30 local on Dec 31
+    const result = formatDateISO(localDate);
+    expect(result).toBe("2026-12-31");
+  });
 });
 
 describe("formatTime", () => {
