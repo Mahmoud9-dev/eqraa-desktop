@@ -4,7 +4,7 @@ import { EducationalSubPage } from "@/views/educational/EducationalSubPage";
 import type { EducationalItem } from "@/views/educational/EducationalSubPage";
 
 const EducationalGuidanceCounseling = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const initialData = useMemo<EducationalItem[]>(
     () => t.educationalSeeds.guidanceCounseling,
     [t.educationalSeeds.guidanceCounseling],
@@ -12,6 +12,7 @@ const EducationalGuidanceCounseling = () => {
 
   return (
     <EducationalSubPage
+      key={language}
       translations={t.educational.subPages.guidanceCounseling}
       initialData={initialData}
     />
