@@ -409,18 +409,21 @@ const Meetings = () => {
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
               <p className="text-sm text-muted-foreground">
-                {t.common.showingResults
-                  .replace('{count}', String(filteredMeetings.length))
-                  .replace('{total}', String(totalRecords))}
+                {tFunc("common.showingResults", {
+                  count: filteredMeetings.length,
+                  // When a filter is active the server-side total no longer
+                  // reflects the visible slice — fall back to the filtered
+                  // length so the counter doesn't read "3 of 42".
+                  total:
+                    filterType === "all" ? totalRecords : filteredMeetings.length,
+                })}
               </p>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={prevPage} disabled={page <= 1}>
                   {t.common.previous}
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  {t.common.pageOf
-                    .replace('{page}', String(page))
-                    .replace('{totalPages}', String(totalPages))}
+                  {tFunc("common.pageOf", { page, totalPages })}
                 </span>
                 <Button variant="outline" size="sm" onClick={nextPage} disabled={page >= totalPages}>
                   {t.common.next}
