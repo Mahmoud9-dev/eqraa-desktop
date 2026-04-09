@@ -1,9 +1,10 @@
 
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getStudentsByDept, addStudent } from "@/lib/database/repositories/students";
 import { getTeachersByDept } from "@/lib/database/repositories/teachers";
-import { getEducationalSessions, addEducationalSession } from "@/lib/database/repositories/educational-sessions";
+import { getEducationalSessionsPaginated, addEducationalSession } from "@/lib/database/repositories/educational-sessions";
+import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import {
 import IconButton from "@/components/IconButton";
 import { BookOpen, HandHeart, Target, Star, Users, Lightbulb } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { logger } from "@/lib/logger";
 import { formatDate } from "@/lib/i18n";
 
 interface Teacher {
@@ -49,6 +51,8 @@ const Educational = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [sessions, setSessions] = useState<EducationalSession[]>([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [grade, setGrade] = useState("");
@@ -60,37 +64,41 @@ const Educational = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { t, languageMeta } = useLanguage();
+  const { page, pageSize, nextPage, prevPage } = usePagination({ initialPageSize: 10 });
 
   const ed = t.educational.main;
   const icons = t.educational.iconLabels;
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const studentsData = await getStudentsByDept("tarbawi");
       setStudents(studentsData);
     } catch {
-      console.error("Failed to load students");
+      logger.error("Failed to load students");
     }
 
     try {
       const teachersData = await getTeachersByDept("tarbawi");
       setTeachers(teachersData);
     } catch {
-      console.error("Failed to load teachers");
+      logger.error("Failed to load teachers");
     }
 
     try {
-      const sessionsData = await getEducationalSessions();
-      setSessions(sessionsData);
+      const result = await getEducationalSessionsPaginated({ page, pageSize });
+      setSessions(result.data as EducationalSession[]);
+      setTotalRecords(result.total);
+      setTotalPages(result.totalPages);
     } catch {
-      console.error("Failed to load sessions");
+      logger.error("Failed to load sessions");
     }
-  };
+  }, [page, pageSize]);
 
   useEffect(() => {
+    // data fetch on mount — setState after await is safe, rule false-positives
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +112,7 @@ const Educational = () => {
         grade,
         department: "tarbawi",
         parts_memorized: 0,
-        current_progress: "مسجل في البرنامج التربوي",
+        current_progress: "\u0645\u0633\u062C\u0644 \u0641\u064A \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C \u0627\u0644\u062A\u0631\u0628\u0648\u064A",
         previous_progress: "",
       });
       toast({ title: ed.toast.addStudentSuccess });
@@ -350,7 +358,7 @@ const Educational = () => {
                 </CardContent>
               </Card>
             ) : (
-              sessions.slice(0, 10).map((session) => (
+              sessions.map((session) => (
                 <Card key={session.id} className="border-r-4 border-r-primary">
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
@@ -378,6 +386,28 @@ const Educational = () => {
                   </CardContent>
                 </Card>
               ))
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-sm text-muted-foreground">
+                  {t.common.showingResults
+                    .replace('{count}', String(sessions.length))
+                    .replace('{total}', String(totalRecords))}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={prevPage} disabled={page <= 1}>
+                    {t.common.previous}
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {t.common.pageOf
+                      .replace('{page}', String(page))
+                      .replace('{totalPages}', String(totalPages))}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={nextPage} disabled={page >= totalPages}>
+                    {t.common.next}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>

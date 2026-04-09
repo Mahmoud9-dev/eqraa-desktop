@@ -434,7 +434,7 @@ const Library = () => {
   const renderFormFields = (idPrefix: string) => (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-title`} className="text-right">
+        <Label htmlFor={`${idPrefix}-title`} className="text-end">
           {t.library.form.titleLabel}
         </Label>
         <Input
@@ -450,7 +450,7 @@ const Library = () => {
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-author`} className="text-right">
+        <Label htmlFor={`${idPrefix}-author`} className="text-end">
           {t.library.form.authorLabel}
         </Label>
         <Input
@@ -466,7 +466,7 @@ const Library = () => {
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-type`} className="text-right">
+        <Label htmlFor={`${idPrefix}-type`} className="text-end">
           {t.library.form.typeLabel}
         </Label>
         <Select
@@ -490,7 +490,7 @@ const Library = () => {
         </Select>
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-category`} className="text-right">
+        <Label htmlFor={`${idPrefix}-category`} className="text-end">
           {t.library.form.categoryLabel}
         </Label>
         <Select
@@ -514,7 +514,7 @@ const Library = () => {
         </Select>
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-description`} className="text-right">
+        <Label htmlFor={`${idPrefix}-description`} className="text-end">
           {t.library.form.descriptionLabel}
         </Label>
         <Textarea
@@ -531,7 +531,7 @@ const Library = () => {
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={`${idPrefix}-url`} className="text-right">
+        <Label htmlFor={`${idPrefix}-url`} className="text-end">
           {t.library.form.urlLabel}
         </Label>
         <Input

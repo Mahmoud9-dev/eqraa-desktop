@@ -110,9 +110,6 @@ jobs:
           useradd -m builder
           chown -R builder:builder .
           cd pkg/arch
-          sed -i 's|source=.*|source=()|' PKGBUILD
-          sed -i 's|sha256sums=.*|sha256sums=()|' PKGBUILD
-          sed -i "s|cd \"\$pkgname-\$pkgver\"|cd $GITHUB_WORKSPACE|g" PKGBUILD
           su builder -c "makepkg -sf --noconfirm"
 
       - name: Upload to release

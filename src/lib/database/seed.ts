@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { getDb, uuid } from "./db";
 import { getStudents } from "./repositories/students";
 import { getTeachers } from "./repositories/teachers";
@@ -88,13 +89,22 @@ export async function seedDemoData(): Promise<string> {
   // 2. Ensure default teachers exist, then insert 7 new demo teachers
   await getTeachers(); // triggers ensureTeachersSeeded()
 
-  const newTeacherIds: string[] = [];
-  for (const t of NEW_TEACHERS) {
-    const id = uuid();
-    newTeacherIds.push(id);
+  // Batch-insert all new demo teachers in a single round-trip.
+  // 7 teachers * 7 bind columns = 49 variables (well under SQLite's 999 limit).
+  const newTeacherIds: string[] = NEW_TEACHERS.map(() => uuid());
+  {
+    const valuePlaceholders: string[] = [];
+    const params: (string | number | null)[] = [];
+    NEW_TEACHERS.forEach((t, index) => {
+      const base = index * 7;
+      valuePlaceholders.push(
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, 1, 1)`
+      );
+      params.push(newTeacherIds[index], t.name, t.specialization, t.department, null, null, t.experience);
+    });
     await db.execute(
-      "INSERT INTO teachers (id, name, specialization, department, email, phone, experience, is_active, is_demo) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, 1)",
-      [id, t.name, t.specialization, t.department, null, null, t.experience]
+      `INSERT INTO teachers (id, name, specialization, department, email, phone, experience, is_active, is_demo) VALUES ${valuePlaceholders.join(", ")}`,
+      params
     );
   }
 
@@ -118,11 +128,14 @@ export async function seedDemoData(): Promise<string> {
   const quranStudentIds: string[] = [];
   const studentTeacherMap: Record<string, string> = {}; // studentId -> teacherId
 
+  // Phase A: build all student rows in memory (no DB calls yet).
+  type StudentRow = [string, string, number, string, string, string, number, number, string, null];
+  const studentRows: StudentRow[] = [];
   const usedNames = new Set<string>();
 
   for (const { dept, count } of studentDepts) {
     if (teachersByDept[dept].length === 0) {
-      console.warn(`[seed] No active teachers in department "${dept}", skipping student seeding for this dept.`);
+      logger.warn(`[seed] No active teachers in department "${dept}", skipping student seeding for this dept.`);
       continue;
     }
 
@@ -143,60 +156,106 @@ export async function seedDemoData(): Promise<string> {
       allStudentIds.push(id);
       if (dept === "quran") quranStudentIds.push(id);
       studentTeacherMap[id] = teacherId;
-
-      await db.execute(
-        `INSERT INTO students (id, name, age, grade, department, teacher_id, parts_memorized, attendance, parent_name, parent_phone, is_active, is_demo)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, 1)`,
-        [id, name, age, grade, dept, teacherId, partsMem, attendancePct, pick(PARENT_NAMES), null]
-      );
+      studentRows.push([id, name, age, grade, dept, teacherId, partsMem, attendancePct, pick(PARENT_NAMES), null]);
     }
   }
 
-  // 5. Generate 30 days of attendance records (~40 students/day)
+  // Phase B: batch-insert all students in a single round-trip.
+  // 50 students * 10 bind columns = 500 variables (well under SQLite's 999 limit).
+  if (studentRows.length > 0) {
+    const valuePlaceholders: string[] = [];
+    const params: (string | number | null)[] = [];
+    studentRows.forEach((row, index) => {
+      const base = index * 10;
+      valuePlaceholders.push(
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, 1, 1)`
+      );
+      params.push(...row);
+    });
+    await db.execute(
+      `INSERT INTO students (id, name, age, grade, department, teacher_id, parts_memorized, attendance, parent_name, parent_phone, is_active, is_demo) VALUES ${valuePlaceholders.join(", ")}`,
+      params
+    );
+  }
+
+  // 5. Generate 30 days of attendance records (~40 students/day).
+  // Rows are collected first, then flushed in chunks of 100 (5 columns * 100 = 500 variables per chunk).
   const statuses = ["حاضر", "حاضر", "حاضر", "حاضر", "حاضر", "حاضر",
                      "غائب", "غائب", "مأذون"]; // ~67% present, ~22% absent, ~11% excused
-  let attendanceCount = 0;
+  const ATTENDANCE_CHUNK_SIZE = 100;
+
+  type AttendanceRow = [string, string, string, string, string];
+  const attendanceRows: AttendanceRow[] = [];
 
   for (let day = 1; day <= 30; day++) {
-    // Skip Fridays (approx)
     const d = new Date();
     d.setDate(d.getDate() - day);
-    if (d.getDay() === 5) continue; // Friday
+    if (d.getDay() === 5) continue; // Skip Fridays
 
     const date = dateStr(day);
     const studentsToday = allStudentIds.filter(() => Math.random() < 0.8); // ~80% of students each day
 
     for (const studentId of studentsToday) {
-      const id = uuid();
-      const status = pick(statuses);
-      await db.execute(
-        "INSERT INTO attendance_records (id, student_id, teacher_id, record_date, status, is_demo) VALUES ($1, $2, $3, $4, $5, 1)",
-        [id, studentId, studentTeacherMap[studentId], date, status]
-      );
-      attendanceCount++;
+      attendanceRows.push([uuid(), studentId, studentTeacherMap[studentId], date, pick(statuses)]);
     }
   }
 
-  // 6. Generate quran sessions for quran-department students (~120 sessions)
-  let sessionCount = 0;
+  const attendanceCount = attendanceRows.length;
+
+  for (let chunkStart = 0; chunkStart < attendanceRows.length; chunkStart += ATTENDANCE_CHUNK_SIZE) {
+    const chunk = attendanceRows.slice(chunkStart, chunkStart + ATTENDANCE_CHUNK_SIZE);
+    const valuePlaceholders: string[] = [];
+    const params: (string | null)[] = [];
+    chunk.forEach((row, index) => {
+      const base = index * 5;
+      valuePlaceholders.push(
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, 1)`
+      );
+      params.push(...row);
+    });
+    await db.execute(
+      `INSERT INTO attendance_records (id, student_id, teacher_id, record_date, status, is_demo) VALUES ${valuePlaceholders.join(", ")}`,
+      params
+    );
+  }
+
+  // 6. Generate quran sessions for quran-department students (~120 sessions).
+  // Rows are collected first, then flushed in chunks of 100 (8 columns * 100 = 800 variables per chunk).
+  const QURAN_CHUNK_SIZE = 100;
+
+  type QuranSessionRow = [string, string, string, string, string, number, number, number];
+  const quranSessionRows: QuranSessionRow[] = [];
 
   for (const studentId of quranStudentIds) {
     const numSessions = randomInt(4, 8);
     for (let s = 0; s < numSessions; s++) {
-      const id = uuid();
       const daysAgo = randomInt(1, 30);
       const date = dateStr(daysAgo);
       const surah = pick(SURAHS);
       const versesFrom = randomInt(1, 20);
       const versesTo = versesFrom + randomInt(3, 15);
       const rating = weightedRating();
-
-      await db.execute(
-        "INSERT INTO quran_sessions (id, student_id, teacher_id, session_date, surah_name, verses_from, verses_to, performance_rating, is_demo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1)",
-        [id, studentId, studentTeacherMap[studentId], date, surah, versesFrom, versesTo, rating]
-      );
-      sessionCount++;
+      quranSessionRows.push([uuid(), studentId, studentTeacherMap[studentId], date, surah, versesFrom, versesTo, rating]);
     }
+  }
+
+  const sessionCount = quranSessionRows.length;
+
+  for (let chunkStart = 0; chunkStart < quranSessionRows.length; chunkStart += QURAN_CHUNK_SIZE) {
+    const chunk = quranSessionRows.slice(chunkStart, chunkStart + QURAN_CHUNK_SIZE);
+    const valuePlaceholders: string[] = [];
+    const params: (string | number)[] = [];
+    chunk.forEach((row, index) => {
+      const base = index * 8;
+      valuePlaceholders.push(
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, 1)`
+      );
+      params.push(...row);
+    });
+    await db.execute(
+      `INSERT INTO quran_sessions (id, student_id, teacher_id, session_date, surah_name, verses_from, verses_to, performance_rating, is_demo) VALUES ${valuePlaceholders.join(", ")}`,
+      params
+    );
   }
 
   return `DONE:${allStudentIds.length}:${newTeacherIds.length + 3}:${attendanceCount}:${sessionCount}`;

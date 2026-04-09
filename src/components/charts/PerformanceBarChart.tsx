@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -12,7 +13,7 @@ interface Props {
   data: PerformanceDistributionRow[];
 }
 
-export default function PerformanceBarChart({ data }: Props) {
+const PerformanceBarChart = memo(({ data }: Props) => {
   const { t } = useLanguage();
 
   if (data.length === 0) {
@@ -40,4 +41,8 @@ export default function PerformanceBarChart({ data }: Props) {
       </ChartContainer>
     </div>
   );
-}
+});
+
+PerformanceBarChart.displayName = "PerformanceBarChart";
+
+export default PerformanceBarChart;

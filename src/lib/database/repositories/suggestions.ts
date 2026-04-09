@@ -1,4 +1,6 @@
 import { getDb, uuid } from "../db";
+import { PaginationParams, paginationClause, computeTotalPages } from "@/lib/database/pagination";
+import type { PaginatedResponse } from "@/types";
 
 export interface Suggestion {
   id: string;
@@ -48,4 +50,28 @@ export async function updateSuggestionStatus(
     status,
     id,
   ]);
+}
+
+export async function getSuggestionsPaginated(
+  params: PaginationParams
+): Promise<PaginatedResponse<Suggestion>> {
+  const db = await getDb();
+  const { clause } = paginationClause(params);
+
+  const countResult = await db.select<[{ count: number }]>(
+    "SELECT COUNT(*) as count FROM suggestions"
+  );
+  const total = countResult[0].count;
+
+  const data = await db.select<Suggestion[]>(
+    `SELECT * FROM suggestions ORDER BY created_at DESC ${clause}`
+  );
+
+  return {
+    data,
+    total,
+    page: params.page,
+    pageSize: params.pageSize,
+    totalPages: computeTotalPages(total, params.pageSize),
+  };
 }

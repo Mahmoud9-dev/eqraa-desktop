@@ -304,12 +304,14 @@ describe("Utility Types", () => {
         total: 1,
         page: 1,
         pageSize: 10,
+        totalPages: 1,
       };
 
       expect(Array.isArray(paginatedResponse.data)).toBe(true);
       expect(paginatedResponse.total).toBe(1);
       expect(paginatedResponse.page).toBe(1);
       expect(paginatedResponse.pageSize).toBe(10);
+      expect(paginatedResponse.totalPages).toBe(1);
     });
   });
 });
@@ -333,15 +335,16 @@ describe("Type Guards and Validators", () => {
       };
 
       // Type guard function
-      const isTeacher = (obj: any): obj is Teacher => {
+      const isTeacher = (obj: unknown): obj is Teacher => {
+        if (!obj || typeof obj !== "object") return false;
+        const record = obj as Record<string, unknown>;
         return (
-          obj &&
-          typeof obj.id === "string" &&
-          typeof obj.name === "string" &&
-          typeof obj.specialization === "string" &&
-          ["quran", "tajweed", "tarbawi"].includes(obj.department) &&
-          typeof obj.isActive === "boolean" &&
-          obj.createdAt instanceof Date
+          typeof record.id === "string" &&
+          typeof record.name === "string" &&
+          typeof record.specialization === "string" &&
+          ["quran", "tajweed", "tarbawi"].includes(record.department as string) &&
+          typeof record.isActive === "boolean" &&
+          record.createdAt instanceof Date
         );
       };
 
@@ -366,22 +369,23 @@ describe("Type Guards and Validators", () => {
         createdAt: new Date(),
       };
 
-      const isStudent = (obj: any): obj is Student => {
+      const isStudent = (obj: unknown): obj is Student => {
+        if (!obj || typeof obj !== "object") return false;
+        const record = obj as Record<string, unknown>;
         return (
-          obj &&
-          typeof obj.id === "string" &&
-          typeof obj.name === "string" &&
-          typeof obj.age === "number" &&
-          obj.age >= 5 &&
-          obj.age <= 25 &&
-          typeof obj.grade === "string" &&
-          typeof obj.teacherId === "string" &&
-          ["quran", "tajweed", "tarbawi"].includes(obj.department) &&
-          typeof obj.partsMemorized === "number" &&
-          typeof obj.currentProgress === "string" &&
-          typeof obj.previousProgress === "string" &&
-          typeof obj.isActive === "boolean" &&
-          obj.createdAt instanceof Date
+          typeof record.id === "string" &&
+          typeof record.name === "string" &&
+          typeof record.age === "number" &&
+          (record.age as number) >= 5 &&
+          (record.age as number) <= 25 &&
+          typeof record.grade === "string" &&
+          typeof record.teacherId === "string" &&
+          ["quran", "tajweed", "tarbawi"].includes(record.department as string) &&
+          typeof record.partsMemorized === "number" &&
+          typeof record.currentProgress === "string" &&
+          typeof record.previousProgress === "string" &&
+          typeof record.isActive === "boolean" &&
+          record.createdAt instanceof Date
         );
       };
 

@@ -37,7 +37,20 @@ const eslintConfig = [
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "warn",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
+      "no-console": "error",
+    },
+  },
+  {
+    files: ["**/*.test.ts", "**/*.test.tsx", "**/test/**"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+  {
+    files: ["src/lib/logger.ts"],
+    rules: {
+      "no-console": "off",
     },
   },
 ];

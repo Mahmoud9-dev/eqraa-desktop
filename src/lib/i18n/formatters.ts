@@ -35,6 +35,22 @@ export function formatDateShort(value: Date | string | number, language: Languag
 }
 
 /**
+ * Format a Date as an ISO date string (yyyy-MM-dd) using LOCAL time.
+ * Using toISOString() here would shift the date across timezones (e.g. a
+ * Date created at 2026-01-15 22:00 in UTC+3 serializes as "2026-01-15"
+ * in local time but "2026-01-15T19:00:00Z" → "2026-01-15" looks fine,
+ * whereas 00:30 local on 2026-01-16 serializes to "2026-01-15" in UTC).
+ * Replaces date-fns `format(date, "yyyy-MM-dd")`.
+ * @example formatDateISO(new Date(2026, 0, 15)) → "2026-01-15"
+ */
+export function formatDateISO(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Format a date value as a localized time string.
  */
 export function formatTime(value: Date | string | number, language: Language): string {

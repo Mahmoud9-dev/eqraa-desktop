@@ -1,6 +1,7 @@
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
-import { getMeetings, addMeeting, updateMeetingStatus, deleteMeeting as deleteMeetingRepo } from "@/lib/database/repositories/meetings";
+import { useState, useEffect, useCallback } from "react";
+import { getMeetingsPaginated, addMeeting, updateMeetingStatus, deleteMeeting as deleteMeetingRepo } from "@/lib/database/repositories/meetings";
+import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,9 @@ const Meetings = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingItem | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { page, pageSize, nextPage, prevPage, setPage, resetPage } = usePagination({ initialPageSize: 20 });
   const { toast } = useToast();
   const { t, tFunc, languageMeta } = useLanguage();
 
@@ -62,19 +66,46 @@ const Meetings = () => {
     "إدارية": t.meetings.typeLabels.admin,
   };
 
-  const loadMeetings = async () => {
+  const loadMeetings = useCallback(async () => {
     try {
-      const data = await getMeetings();
-      setMeetings(data as MeetingItem[]);
+      const result = await getMeetingsPaginated({
+        page,
+        pageSize,
+        type: filterType === "all" ? undefined : filterType,
+      });
+      // If the current page is now beyond the filtered totalPages (e.g.
+      // a delete removed the last row on this page), clamp to the last
+      // valid page and let the page-change effect re-fetch. Don't commit
+      // the empty slice — it would hide the paginator prematurely.
+      const safeTotalPages = Math.max(1, result.totalPages);
+      if (page > safeTotalPages) {
+        setPage(safeTotalPages);
+        return;
+      }
+      setMeetings(result.data as MeetingItem[]);
+      setTotalRecords(result.total);
+      setTotalPages(result.totalPages);
     } catch {
       // silently handle
     }
-  };
+  }, [page, pageSize, filterType, setPage]);
 
   useEffect(() => {
+    // data fetch on mount — setState after await is safe, rule false-positives
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMeetings();
-  }, []);
+  }, [loadMeetings]);
+
+  // Resetting the page is handled synchronously inside applyFilter below
+  // so loadMeetings never races against a stale `page` value when the
+  // user changes the filter.
+  const applyFilter = useCallback(
+    (next: string) => {
+      resetPage();
+      setFilterType(next);
+    },
+    [resetPage],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,10 +164,9 @@ const Meetings = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const filteredMeetings =
-    filterType === "all"
-      ? meetings
-      : meetings.filter((meeting) => meeting.type === filterType);
+  // Filtering moved into the paginated repo query, so `meetings` is
+  // already the filtered slice for the current page.
+  const filteredMeetings = meetings;
 
   return (
     <div className="min-h-screen bg-background">
@@ -240,7 +270,7 @@ const Meetings = () => {
                     : "bg-primary/5 hover:bg-primary/10"
                 }`}
                 onClick={() =>
-                  setFilterType(filterType === "المعلمين" ? "all" : "المعلمين")
+                  applyFilter(filterType === "المعلمين" ? "all" : "المعلمين")
                 }
               >
                 <div className="text-xl sm:text-2xl">👨‍🏫</div>
@@ -260,7 +290,7 @@ const Meetings = () => {
                     : "bg-primary/5 hover:bg-primary/10"
                 }`}
                 onClick={() =>
-                  setFilterType(
+                  applyFilter(
                     filterType === "أولياء الأمور" ? "all" : "أولياء الأمور"
                   )
                 }
@@ -282,7 +312,7 @@ const Meetings = () => {
                     : "bg-primary/5 hover:bg-primary/10"
                 }`}
                 onClick={() =>
-                  setFilterType(filterType === "إدارية" ? "all" : "إدارية")
+                  applyFilter(filterType === "إدارية" ? "all" : "إدارية")
                 }
               >
                 <div className="text-xl sm:text-2xl">⚙️</div>
@@ -308,7 +338,7 @@ const Meetings = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setFilterType("all")}
+                onClick={() => applyFilter("all")}
                 className="text-xs sm:text-sm"
               >
                 {t.meetings.sections.viewAll}
@@ -397,6 +427,27 @@ const Meetings = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                {tFunc("common.showingResults", {
+                  count: filteredMeetings.length,
+                  total: totalRecords,
+                })}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={prevPage} disabled={page <= 1}>
+                  {t.common.previous}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {tFunc("common.pageOf", { page, totalPages })}
+                </span>
+                <Button variant="outline" size="sm" onClick={nextPage} disabled={page >= totalPages}>
+                  {t.common.next}
+                </Button>
+              </div>
             </div>
           )}
         </div>

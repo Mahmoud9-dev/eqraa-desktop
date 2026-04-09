@@ -26,6 +26,10 @@ export interface CommonTranslations {
   toggleTheme: string;
   switchToEnglish: string;
   switchToArabic: string;
+  previous: string;
+  next: string;
+  pageOf: string;
+  showingResults: string;
 }
 
 export const common: Record<Language, CommonTranslations> = {
@@ -55,6 +59,10 @@ export const common: Record<Language, CommonTranslations> = {
     toggleTheme: 'تبديل الوضع',
     switchToEnglish: 'Switch to English',
     switchToArabic: 'التبديل إلى العربية',
+    previous: 'السابق',
+    next: 'التالي',
+    pageOf: 'صفحة {page} من {totalPages}',
+    showingResults: 'عرض {count} من {total} نتيجة',
   },
   en: {
     save: 'Save',
@@ -82,5 +90,9 @@ export const common: Record<Language, CommonTranslations> = {
     toggleTheme: 'Toggle theme',
     switchToEnglish: 'Switch to English',
     switchToArabic: 'التبديل إلى العربية',
+    previous: 'Previous',
+    next: 'Next',
+    pageOf: 'Page {page} of {totalPages}',
+    showingResults: 'Showing {count} of {total} results',
   },
 };

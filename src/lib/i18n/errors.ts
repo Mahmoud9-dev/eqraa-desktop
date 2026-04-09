@@ -13,6 +13,7 @@ export interface ErrorTranslations {
   validationMaxLength: string;
   validationPasswordsMustMatch: string;
   backHome: string;
+  errorBoundaryRetry: string;
 }
 
 export const errors: Record<Language, ErrorTranslations> = {
@@ -29,6 +30,7 @@ export const errors: Record<Language, ErrorTranslations> = {
     validationMaxLength: 'القيمة طويلة جداً',
     validationPasswordsMustMatch: 'كلمتا المرور غير متطابقتين',
     backHome: 'العودة للرئيسية',
+    errorBoundaryRetry: 'حاول مرة أخرى',
   },
   en: {
     notFound: 'Page Not Found',
@@ -43,5 +45,6 @@ export const errors: Record<Language, ErrorTranslations> = {
     validationMaxLength: 'Value is too long',
     validationPasswordsMustMatch: 'Passwords do not match',
     backHome: 'Back to Home',
+    errorBoundaryRetry: 'Try Again',
   },
 };

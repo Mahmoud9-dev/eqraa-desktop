@@ -33,20 +33,22 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CalendarIcon, Download, FileText, Loader2, Search } from "lucide-react";
 import AttendanceTrendChart from "@/components/charts/AttendanceTrendChart";
 import { getAttendanceTrend, type AttendanceTrendRow } from "@/lib/database/repositories/stats";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
 import { getStudents as fetchStudents } from "@/lib/database/repositories/students";
 import { getTeachers as fetchTeachers } from "@/lib/database/repositories/teachers";
 import {
   getAttendanceRecords as fetchAttendanceRecords,
+  getAttendanceRecordsPaginated,
   insertAttendanceRecords,
 } from "@/lib/database/repositories/attendance";
+import { usePagination } from "@/hooks/usePagination";
 import type { Student as DbStudent } from "@/lib/database/repositories/students";
 import type { Teacher as DbTeacher } from "@/lib/database/repositories/teachers";
 import type { AttendanceRecord as DbAttendanceRecord } from "@/lib/database/repositories/attendance";
 import { exportCSV } from "@/lib/export/csv";
 import { exportPDF } from "@/lib/export/pdf";
-import { formatDate } from "@/lib/i18n";
+import { formatDate, formatDateISO } from "@/lib/i18n";
+import { logger } from "@/lib/logger";
+import { getDepartmentLabel } from "@/lib/labels";
 
 interface Student {
   id: string;
@@ -117,6 +119,9 @@ const Attendance = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [trendData, setTrendData] = useState<AttendanceTrendRow[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<AttendancePeriod>('month');
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { page, pageSize, nextPage, prevPage, goToPage, setPage, resetPage } = usePagination({ initialPageSize: 50 });
 
   // Label map for DB attendance status values
   const statusLabels: Record<string, string> = {
@@ -125,15 +130,6 @@ const Attendance = () => {
     "مأذون": t.attendance.status.excused,
   };
 
-  // Label map for department DB values
-  const departmentLabels: Record<string, string> = {
-    quran: t.attendance.departments.quran,
-    tajweed: t.attendance.departments.tajweed,
-    tarbawi: t.attendance.departments.tarbawi,
-  };
-
-  // date-fns locale based on current language
-  const dateLocale = language === 'ar' ? ar : undefined;
   const [isExporting, setIsExporting] = useState(false);
 
   const attendanceReportHeaders = [
@@ -173,7 +169,7 @@ const Attendance = () => {
         toast({ title: t.export.exportSuccess });
       }
     } catch (err) {
-      console.error("CSV export error:", err);
+      logger.error("CSV export error:", err);
       toast({ title: t.export.exportError, variant: "destructive" });
     } finally {
       setIsExporting(false);
@@ -194,7 +190,7 @@ const Attendance = () => {
         toast({ title: t.export.exportSuccess });
       }
     } catch (err) {
-      console.error("PDF export error:", err);
+      logger.error("PDF export error:", err);
       toast({ title: t.export.exportError, variant: "destructive" });
     } finally {
       setIsExporting(false);
@@ -217,7 +213,7 @@ const Attendance = () => {
       }));
       setStudents(transformedStudents);
     } catch (error) {
-      console.error("Error loading students:", error);
+      logger.error("Error loading students:", error);
     }
   }, []);
 
@@ -232,15 +228,33 @@ const Attendance = () => {
       }));
       setTeachers(transformedTeachers);
     } catch (error) {
-      console.error("Error loading teachers:", error);
+      logger.error("Error loading teachers:", error);
     }
   }, []);
 
-  // Load attendance records from SQLite
+  // Load attendance records from SQLite (paginated). The selectedPeriod
+  // cutoff is pushed into the repo query so data, total, and totalPages
+  // all reflect the same filtered set.
   const loadAttendanceRecords = useCallback(async () => {
     try {
-      const records = await fetchAttendanceRecords();
-      const transformedRecords: AttendanceRecord[] = records.map((r) => ({
+      const now = new Date();
+      const cutoff = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - PERIOD_DAYS[selectedPeriod],
+      );
+      const startDate = formatDateISO(cutoff);
+      const result = await getAttendanceRecordsPaginated({
+        page,
+        pageSize,
+        startDate,
+      });
+      const safeTotalPages = Math.max(1, result.totalPages);
+      if (page > safeTotalPages) {
+        setPage(safeTotalPages);
+        return;
+      }
+      const transformedRecords: AttendanceRecord[] = result.data.map((r) => ({
         ...r,
         studentId: r.student_id || "",
         teacherId: r.teacher_id || "",
@@ -248,10 +262,12 @@ const Attendance = () => {
         status: r.status as "حاضر" | "غائب" | "مأذون",
       }));
       setAttendanceRecords(transformedRecords);
+      setTotalRecords(result.total);
+      setTotalPages(result.totalPages);
     } catch (error) {
-      console.error("Error loading attendance records:", error);
+      logger.error("Error loading attendance records:", error);
     }
-  }, []);
+  }, [page, pageSize, selectedPeriod, setPage]);
 
   // Load all data on mount
   useEffect(() => {
@@ -265,8 +281,18 @@ const Attendance = () => {
 
   // Reload trend data when period changes
   useEffect(() => {
-    getAttendanceTrend(PERIOD_DAYS[selectedPeriod]).then(setTrendData).catch(console.error);
+    getAttendanceTrend(PERIOD_DAYS[selectedPeriod]).then(setTrendData).catch((err: unknown) => logger.error("Failed to fetch attendance trend", err));
   }, [selectedPeriod]);
+
+  // Reset pagination synchronously before updating selectedPeriod so
+  // loadAttendanceRecords never races against a stale page.
+  const applyPeriod = useCallback(
+    (next: AttendancePeriod) => {
+      resetPage();
+      setSelectedPeriod(next);
+    },
+    [resetPage],
+  );
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch = student.name
@@ -277,16 +303,9 @@ const Attendance = () => {
     return matchesSearch && matchesDepartment;
   });
 
-  const filteredAttendanceRecords = (() => {
-    const now = new Date();
-    const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - PERIOD_DAYS[selectedPeriod]);
-    const cutoffStr = format(cutoff, "yyyy-MM-dd");
-    return attendanceRecords.filter((r) => (r.record_date || r.date || '') >= cutoffStr);
-  })();
-
-  const getDepartmentName = (dept: string) => {
-    return departmentLabels[dept] || dept;
-  };
+  // Period filtering moved into the paginated repo query, so
+  // `attendanceRecords` is already the filtered slice for the current page.
+  const filteredAttendanceRecords = attendanceRecords;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -340,7 +359,7 @@ const Attendance = () => {
         description: tFunc('attendance.toast.studentRecordedDesc', { count: recordsToInsert.length }),
       });
     } catch (error) {
-      console.error("Error recording attendance:", error);
+      logger.error("Error recording attendance:", error);
       toast({
         title: t.attendance.toast.error,
         description: t.attendance.toast.recordError,
@@ -406,7 +425,7 @@ const Attendance = () => {
         description: tFunc('attendance.toast.teacherRecordedDesc', { count: recordsToInsert.length }),
       });
     } catch (error) {
-      console.error("Error recording teacher attendance:", error);
+      logger.error("Error recording teacher attendance:", error);
       toast({
         title: t.attendance.toast.error,
         description: t.attendance.toast.recordError,
@@ -487,7 +506,7 @@ const Attendance = () => {
               <ToggleGroup
                 type="single"
                 value={selectedPeriod}
-                onValueChange={(v) => { if (v) setSelectedPeriod(v as AttendancePeriod); }}
+                onValueChange={(v) => { if (v) applyPeriod(v as AttendancePeriod); }}
                 className="gap-1"
               >
                 {(Object.keys(PERIOD_DAYS) as AttendancePeriod[]).map((key) => (
@@ -518,13 +537,13 @@ const Attendance = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.dateLabel}</label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className="w-48">
                               <CalendarIcon className="ms-2 h-4 w-4" />
-                              {format(selectedDate, "PPP", { locale: dateLocale })}
+                              {formatDate(selectedDate, language)}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -538,7 +557,7 @@ const Attendance = () => {
                         </Popover>
                       </div>
 
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.departmentLabel}</label>
                         <Select
                           value={filterDepartment}
@@ -582,7 +601,7 @@ const Attendance = () => {
                                 <h5 className="font-medium">{student.name}</h5>
                                 <p className="text-sm text-muted-foreground">
                                   {student.grade} •{" "}
-                                  {getDepartmentName(student.department)}
+                                  {getDepartmentLabel(student.department, t)}
                                 </p>
                               </div>
                               <Badge variant="outline">
@@ -590,7 +609,7 @@ const Attendance = () => {
                               </Badge>
                             </div>
 
-                            <div className="flex space-x-2 space-x-reverse">
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant={
@@ -678,8 +697,9 @@ const Attendance = () => {
                           <TableCell>{getStudentName(record.studentId || record.student_id)}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {getDepartmentName(
-                                getStudentDepartment(record.studentId || record.student_id)
+                              {getDepartmentLabel(
+                                getStudentDepartment(record.studentId || record.student_id),
+                                t
                               )}
                             </Badge>
                           </TableCell>
@@ -694,6 +714,38 @@ const Attendance = () => {
                       ))}
                     </TableBody>
                   </Table>
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4">
+                      <p className="text-sm text-muted-foreground">
+                        {t.common.showingResults
+                          .replace('{count}', String(attendanceRecords.length))
+                          .replace('{total}', String(totalRecords))}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={prevPage}
+                          disabled={page <= 1}
+                        >
+                          {t.common.previous}
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          {t.common.pageOf
+                            .replace('{page}', String(page))
+                            .replace('{totalPages}', String(totalPages))}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={nextPage}
+                          disabled={page >= totalPages}
+                        >
+                          {t.common.next}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -708,13 +760,13 @@ const Attendance = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.dateLabel}</label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className="w-48">
                               <CalendarIcon className="ms-2 h-4 w-4" />
-                              {format(selectedDate, "PPP", { locale: dateLocale })}
+                              {formatDate(selectedDate, language)}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -728,7 +780,7 @@ const Attendance = () => {
                         </Popover>
                       </div>
 
-                      <div className="flex items-center space-x-2 space-x-reverse">
+                      <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">{t.attendance.filter.departmentLabel}</label>
                         <Select
                           value={filterDepartment}
@@ -774,7 +826,7 @@ const Attendance = () => {
                                   {teacher.specialization}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                  {getDepartmentName(teacher.department)}
+                                  {getDepartmentLabel(teacher.department, t)}
                                 </p>
                               </div>
                               <Badge
@@ -786,7 +838,7 @@ const Attendance = () => {
                               </Badge>
                             </div>
 
-                            <div className="flex space-x-2 space-x-reverse">
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant={

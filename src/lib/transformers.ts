@@ -1,5 +1,5 @@
 /**
- * Data transformation utilities for Supabase database operations
+ * Data transformation utilities for database operations
  * Handles conversion between snake_case (database) and camelCase (application)
  */
 

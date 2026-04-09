@@ -458,7 +458,7 @@ const Announcements = () => {
                       ).map((role) => (
                         <div
                           key={role}
-                          className="flex items-center space-x-2 space-x-reverse"
+                          className="flex items-center gap-2"
                         >
                           <Checkbox
                             id={role}
@@ -484,7 +484,7 @@ const Announcements = () => {
                     <Label htmlFor="isActive" className="text-end">
                       {t.announcements.form.statusLabel}
                     </Label>
-                    <div className="col-span-3 flex items-center space-x-2 space-x-reverse">
+                    <div className="col-span-3 flex items-center gap-2">
                       <Checkbox
                         id="isActive"
                         checked={newAnnouncement.isActive || false}
@@ -796,7 +796,7 @@ const Announcements = () => {
                             {t.announcements.scheduled.publishDate}{" "}
                             {announcement.scheduledFor && formatDateTime(announcement.scheduledFor, language)}
                           </div>
-                          <div className="flex space-x-2 space-x-reverse">
+                          <div className="flex gap-2">
                             <Button variant="outline" size="sm">
                               {t.common.edit}
                             </Button>
@@ -912,7 +912,7 @@ const Announcements = () => {
                 ).map((role) => (
                   <div
                     key={role}
-                    className="flex items-center space-x-2 space-x-reverse"
+                    className="flex items-center gap-2"
                   >
                     <Checkbox
                       id={`edit-${role}`}
@@ -934,7 +934,7 @@ const Announcements = () => {
               <Label htmlFor="edit-isActive" className="text-end">
                 {t.announcements.form.statusLabel}
               </Label>
-              <div className="col-span-3 flex items-center space-x-2 space-x-reverse">
+              <div className="col-span-3 flex items-center gap-2">
                 <Checkbox
                   id="edit-isActive"
                   checked={newAnnouncement.isActive || false}

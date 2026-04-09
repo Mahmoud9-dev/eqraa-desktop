@@ -1,4 +1,5 @@
 
+import { ScheduleSession } from "@/types";
 import { useState } from "react";
 import {
   Card,
@@ -34,7 +35,7 @@ import { formatDate } from "@/lib/i18n";
 
 const Schedule = () => {
   const [isAddSessionDialogOpen, setIsAddSessionDialogOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSession, setSelectedSession] = useState<ScheduleSession | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -400,7 +401,7 @@ const Schedule = () => {
     });
   };
 
-  const openEditDialog = (session: any, dayOfWeek: number) => {
+  const openEditDialog = (session: ScheduleSession, dayOfWeek: number) => {
     setSelectedSession({ ...session, dayOfWeek });
     setNewSession({
       title: session.title,
@@ -416,7 +417,7 @@ const Schedule = () => {
     setIsEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (session: any, dayOfWeek: number) => {
+  const openDeleteDialog = (session: ScheduleSession, dayOfWeek: number) => {
     setSelectedSession({ ...session, dayOfWeek });
     setIsDeleteDialogOpen(true);
   };
@@ -621,7 +622,7 @@ const Schedule = () => {
                               className="flex items-center justify-between p-3 bg-muted rounded-lg"
                             >
                               <div className="flex-1">
-                                <div className="flex items-center space-x-2 space-x-reverse">
+                                <div className="flex items-center gap-2">
                                   <h4 className="font-medium">
                                     {session.title}
                                   </h4>
@@ -643,7 +644,7 @@ const Schedule = () => {
                                   • {session.location}
                                 </div>
                               </div>
-                              <div className="flex space-x-2 space-x-reverse">
+                              <div className="flex gap-2">
                                 <Button
                                   variant="outline"
                                   size="sm"

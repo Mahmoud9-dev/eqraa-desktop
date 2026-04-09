@@ -1,6 +1,7 @@
 import PageHeader from "@/components/PageHeader";
-import { useState, useEffect } from "react";
-import { getSuggestions, addSuggestion, updateSuggestionStatus } from "@/lib/database/repositories/suggestions";
+import { useState, useEffect, useCallback } from "react";
+import { getSuggestionsPaginated, addSuggestion, updateSuggestionStatus } from "@/lib/database/repositories/suggestions";
+import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,22 +28,28 @@ const Suggestions = () => {
   const [suggestedBy, setSuggestedBy] = useState("");
   const [priority, setPriority] = useState<"عالي" | "متوسط" | "منخفض">("متوسط");
   const [isLoading, setIsLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { page, pageSize, nextPage, prevPage } = usePagination({ initialPageSize: 20 });
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const loadSuggestions = async () => {
+  const loadSuggestions = useCallback(async () => {
     try {
-      const data = await getSuggestions();
-      setSuggestions(data as SuggestionItem[]);
+      const result = await getSuggestionsPaginated({ page, pageSize });
+      setSuggestions(result.data as SuggestionItem[]);
+      setTotalRecords(result.total);
+      setTotalPages(result.totalPages);
     } catch {
       toast({ title: t.suggestions.toast.loadError, variant: "destructive" });
     }
-  };
+  }, [page, pageSize, toast, t]);
 
   useEffect(() => {
+    // data fetch on mount — setState after await is safe, rule false-positives
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSuggestions();
-  }, []);
+  }, [loadSuggestions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,6 +187,28 @@ const Suggestions = () => {
                   </CardContent>
                 </Card>
               ))
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-sm text-muted-foreground">
+                  {t.common.showingResults
+                    .replace('{count}', String(suggestions.length))
+                    .replace('{total}', String(totalRecords))}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={prevPage} disabled={page <= 1}>
+                    {t.common.previous}
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {t.common.pageOf
+                      .replace('{page}', String(page))
+                      .replace('{totalPages}', String(totalPages))}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={nextPage} disabled={page >= totalPages}>
+                    {t.common.next}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
