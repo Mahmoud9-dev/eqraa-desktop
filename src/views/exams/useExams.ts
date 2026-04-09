@@ -140,10 +140,10 @@ export function useExams() {
 
   const getExamStatusText = useCallback(
     (exam: Exam): string => {
-      const examDate = new Date(exam.date);
-      const today = new Date();
-      if (examDate < today) return t.exams.status.completed;
-      if (examDate.toDateString() === today.toDateString()) return t.exams.status.today;
+      const examDay = startOfDay(new Date(exam.date)).getTime();
+      const today = startOfDay(new Date()).getTime();
+      if (examDay === today) return t.exams.status.today;
+      if (examDay < today) return t.exams.status.completed;
       return t.exams.status.upcoming;
     },
     [t],
