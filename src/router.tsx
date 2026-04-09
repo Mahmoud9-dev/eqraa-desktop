@@ -5,10 +5,10 @@ import NotFound from "@/views/NotFound";
 import LoadingFallback from "@/components/LoadingFallback";
 
 const Admin = lazy(() => import("@/views/Admin"));
-const Students = lazy(() => import("@/views/Students"));
+const Students = lazy(() => import("@/views/students"));
 const Teachers = lazy(() => import("@/views/Teachers"));
 const Quran = lazy(() => import("@/views/Quran"));
-const QuranCircles = lazy(() => import("@/views/QuranCircles"));
+const QuranCircles = lazy(() => import("@/views/quran-circles"));
 const Tajweed = lazy(() => import("@/views/Tajweed"));
 const Educational = lazy(() => import("@/views/Educational"));
 const EducationalEthicsBehavior = lazy(() => import("@/views/EducationalEthicsBehavior"));
@@ -17,7 +17,7 @@ const EducationalGuidanceCounseling = lazy(() => import("@/views/EducationalGuid
 const EducationalIslamicLessons = lazy(() => import("@/views/EducationalIslamicLessons"));
 const EducationalLifeSkills = lazy(() => import("@/views/EducationalLifeSkills"));
 const EducationalStudentActivities = lazy(() => import("@/views/EducationalStudentActivities"));
-const Exams = lazy(() => import("@/views/Exams"));
+const Exams = lazy(() => import("@/views/exams"));
 const Subjects = lazy(() => import("@/views/Subjects"));
 const Schedule = lazy(() => import("@/views/Schedule"));
 const Attendance = lazy(() => import("@/views/Attendance"));
@@ -26,7 +26,7 @@ const Suggestions = lazy(() => import("@/views/Suggestions"));
 const Announcements = lazy(() => import("@/views/Announcements"));
 const Library = lazy(() => import("@/views/Library"));
 const Settings = lazy(() => import("@/views/Settings"));
-const Tarbiwi = lazy(() => import("@/views/Tarbiwi"));
+const Tarbiwi = lazy(() => import("@/views/tarbiwi"));
 
 export function AppRouter() {
   return (
