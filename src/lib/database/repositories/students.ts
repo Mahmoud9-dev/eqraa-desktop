@@ -15,6 +15,7 @@ export interface Student {
   parent_phone: string | null;
   attendance: number;
   images: string;
+  is_pinned: number;
   created_at: string;
 }
 
@@ -52,7 +53,7 @@ export async function getStudentsWithTeachers(): Promise<StudentWithTeacher[]> {
     `SELECT s.*, t.name as teacher_name
      FROM students s
      LEFT JOIN teachers t ON s.teacher_id = t.id
-     ORDER BY s.name LIMIT 500`
+     ORDER BY s.is_pinned DESC, s.name LIMIT 500`
   );
 }
 
@@ -135,4 +136,9 @@ export async function updateStudent(
 export async function deleteStudent(id: string): Promise<void> {
   const db = await getDb();
   await db.execute("DELETE FROM students WHERE id = $1", [id]);
+}
+
+export async function togglePinStudent(id: string, pinned: boolean): Promise<void> {
+  const db = await getDb();
+  await db.execute("UPDATE students SET is_pinned = $1 WHERE id = $2", [pinned ? 1 : 0, id]);
 }
