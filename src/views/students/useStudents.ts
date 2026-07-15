@@ -9,6 +9,7 @@ import {
   addStudent,
   updateStudent,
   deleteStudent,
+  togglePinStudent,
 } from "@/lib/database/repositories/students";
 import {
   getAllStudentNotes,
@@ -301,6 +302,15 @@ export function useStudents() {
     }
   }, [selectedStudent, newStudent.images, toast, t, loadStudents]);
 
+  const handleTogglePin = useCallback(async (student: Student) => {
+    try {
+      await togglePinStudent(student.id, student.is_pinned !== 1);
+      await loadStudents();
+    } catch (error) {
+      logger.error("Error toggling student pin:", error);
+    }
+  }, [loadStudents]);
+
   const handleDeleteNote = useCallback(async (_studentId: string, noteId: string) => {
     try {
       await deleteStudentNote(noteId);
@@ -367,7 +377,7 @@ export function useStudents() {
     newNote, setNewNote, newStudent, setNewStudent,
     getDepartmentName, getAttendanceColor, getGradeColor, getNoteTypeColor,
     handleExportCSV, handleExportPDF, handleAddStudent, handleEditStudent,
-    handleDeleteStudent, handleEditImages, handleDeleteNote,
+    handleDeleteStudent, handleEditImages, handleDeleteNote, handleTogglePin,
     openEditDialog, openDeleteDialog, openEditImagesDialog,
     openAddNoteDialog, openEditNoteDialog,
     t, isRTL,

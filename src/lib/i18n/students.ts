@@ -39,6 +39,8 @@ export interface StudentsTranslations {
     addNewNote: string;
     editProfile: string;
     viewSchedule: string;
+    pin: string;
+    unpin: string;
   };
   form: {
     namePlaceholder: string;
@@ -201,6 +203,8 @@ export const students: Record<Language, StudentsTranslations> = {
       addNewNote: 'إضافة ملاحظة جديدة',
       editProfile: 'تعديل الملف الشخصي',
       viewSchedule: 'عرض الجدول',
+      pin: 'تثبيت',
+      unpin: 'إلغاء التثبيت',
     },
     form: {
       namePlaceholder: 'أدخل اسم الطالب',
@@ -361,6 +365,8 @@ export const students: Record<Language, StudentsTranslations> = {
       addNewNote: 'Add New Note',
       editProfile: 'Edit Profile',
       viewSchedule: 'View Schedule',
+      pin: 'Pin',
+      unpin: 'Unpin',
     },
     form: {
       namePlaceholder: 'Enter student name',
