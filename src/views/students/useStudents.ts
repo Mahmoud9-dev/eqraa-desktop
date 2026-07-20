@@ -303,13 +303,16 @@ export function useStudents() {
   }, [selectedStudent, newStudent.images, toast, t, loadStudents]);
 
   const handleTogglePin = useCallback(async (student: Student) => {
+    const nextPinned = student.is_pinned !== 1;
     try {
-      await togglePinStudent(student.id, student.is_pinned !== 1);
+      await togglePinStudent(student.id, nextPinned);
       await loadStudents();
+      toast({ title: nextPinned ? t.students.toast.pinSuccess : t.students.toast.unpinSuccess });
     } catch (error) {
       logger.error("Error toggling student pin:", error);
+      toast({ title: t.students.toast.error, description: t.students.toast.pinError, variant: "destructive" });
     }
-  }, [loadStudents]);
+  }, [loadStudents, toast, t]);
 
   const handleDeleteNote = useCallback(async (_studentId: string, noteId: string) => {
     try {

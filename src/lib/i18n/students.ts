@@ -131,6 +131,9 @@ export interface StudentsTranslations {
     imageEditSuccess: string;
     imageEditSuccessDesc: string;
     imageEditError: string;
+    pinSuccess: string;
+    unpinSuccess: string;
+    pinError: string;
   };
   images: {
     title: string;
@@ -295,6 +298,9 @@ export const students: Record<Language, StudentsTranslations> = {
       imageEditSuccess: 'تم التعديل',
       imageEditSuccessDesc: 'تم تعديل السور المحفوظة بنجاح',
       imageEditError: 'حدث خطأ أثناء تعديل السور المحفوظة',
+      pinSuccess: 'تم التثبيت',
+      unpinSuccess: 'تم إلغاء التثبيت',
+      pinError: 'حدث خطأ أثناء تحديث حالة التثبيت',
     },
     images: {
       title: 'الصور المحفوظة للطلاب',
@@ -457,6 +463,9 @@ export const students: Record<Language, StudentsTranslations> = {
       imageEditSuccess: 'Updated',
       imageEditSuccessDesc: 'Memorized surahs updated successfully',
       imageEditError: 'An error occurred while updating memorized surahs',
+      pinSuccess: 'Pinned',
+      unpinSuccess: 'Unpinned',
+      pinError: 'An error occurred while updating pin status',
     },
     images: {
       title: 'Student Memorized Images',
