@@ -3,6 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { exportCSV } from "@/lib/export/csv";
 import { exportPDF } from "@/lib/export/pdf";
+import { importStudentsFromCSV, type StudentImportSummary } from "@/lib/import/students";
 import { Department } from "@/types";
 import {
   getStudentsWithTeachers,
@@ -47,6 +48,9 @@ export function useStudents() {
   const [selectedNote, setSelectedNote] = useState<StudentNote | null>(null);
   const [editingImageType, setEditingImageType] = useState<"new" | "recent" | "distant">("new");
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<StudentImportSummary | null>(null);
+  const [isImportResultOpen, setIsImportResultOpen] = useState(false);
   const [newNote, setNewNote] = useState({
     type: "\u0625\u064A\u062C\u0627\u0628\u064A" as "\u0625\u064A\u062C\u0627\u0628\u064A" | "\u0633\u0644\u0628\u064A",
     content: "",
@@ -214,6 +218,36 @@ export function useStudents() {
     } finally { setIsExporting(false); }
   }, [getLocalDateStamp, studentReportHeaders, getStudentReportRows, toast, t, isRTL]);
 
+  const handleDownloadTemplate = useCallback(async () => {
+    try {
+      await exportCSV(
+        "students-import-template.csv",
+        ["name", "age", "grade", "department", "teacher_name", "parent_name", "parent_phone", "parts_memorized"],
+        []
+      );
+    } catch {
+      toast({ title: t.export.exportError, variant: "destructive" });
+    }
+  }, [toast, t]);
+
+  const handleImportStudents = useCallback(async () => {
+    setIsImporting(true);
+    try {
+      const summary = await importStudentsFromCSV(teachersList);
+      if (!summary) return;
+      setImportResult(summary);
+      setIsImportResultOpen(true);
+      if (summary.importedCount > 0) {
+        await loadStudents();
+      }
+    } catch (error) {
+      logger.error("Error importing students:", error);
+      toast({ title: t.students.toast.error, description: t.export.importError, variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+    }
+  }, [teachersList, loadStudents, toast, t]);
+
   // --- CRUD ---
   const handleAddStudent = useCallback(async () => {
     if (!newStudent.name || !newStudent.grade || !newStudent.teacherId) {
@@ -377,9 +411,11 @@ export function useStudents() {
     isDeleteDialogOpen, setIsDeleteDialogOpen,
     isEditImagesDialogOpen, setIsEditImagesDialogOpen,
     selectedStudent, selectedNote, editingImageType, isExporting,
+    isImporting, importResult, isImportResultOpen, setIsImportResultOpen,
     newNote, setNewNote, newStudent, setNewStudent,
     getDepartmentName, getAttendanceColor, getGradeColor, getNoteTypeColor,
-    handleExportCSV, handleExportPDF, handleAddStudent, handleEditStudent,
+    handleExportCSV, handleExportPDF, handleDownloadTemplate, handleImportStudents,
+    handleAddStudent, handleEditStudent,
     handleDeleteStudent, handleEditImages, handleDeleteNote, handleTogglePin,
     openEditDialog, openDeleteDialog, openEditImagesDialog,
     openAddNoteDialog, openEditNoteDialog,

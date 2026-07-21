@@ -164,6 +164,22 @@ export interface StudentsTranslations {
     studentListTitle: string;
     studentListDesc: string;
   };
+  import: {
+    title: string;
+    summary: string;
+    missingColumns: string;
+    columns: {
+      row: string;
+      name: string;
+      reason: string;
+    };
+    reasons: {
+      invalidData: string;
+      invalidDepartment: string;
+      databaseError: string;
+    };
+    close: string;
+  };
 }
 
 export const students: Record<Language, StudentsTranslations> = {
@@ -331,6 +347,22 @@ export const students: Record<Language, StudentsTranslations> = {
       studentListTitle: 'قائمة الطلاب',
       studentListDesc: 'جميع الطلاب المسجلين في المركز',
     },
+    import: {
+      title: 'نتائج الاستيراد',
+      summary: 'تم استيراد {{imported}} طالب وتخطي {{skipped}}',
+      missingColumns: 'أعمدة مطلوبة مفقودة: {{columns}}',
+      columns: {
+        row: 'رقم السطر',
+        name: 'الاسم',
+        reason: 'السبب',
+      },
+      reasons: {
+        invalidData: 'بيانات غير صحيحة',
+        invalidDepartment: 'قسم غير صحيح',
+        databaseError: 'خطأ في قاعدة البيانات',
+      },
+      close: 'إغلاق',
+    },
   },
   en: {
     pageTitle: 'Students',
@@ -495,6 +527,22 @@ export const students: Record<Language, StudentsTranslations> = {
     card: {
       studentListTitle: 'Student List',
       studentListDesc: 'All students registered in the center',
+    },
+    import: {
+      title: 'Import Results',
+      summary: '{{imported}} students imported, {{skipped}} skipped',
+      missingColumns: 'Missing required columns: {{columns}}',
+      columns: {
+        row: 'Row',
+        name: 'Name',
+        reason: 'Reason',
+      },
+      reasons: {
+        invalidData: 'Invalid data',
+        invalidDepartment: 'Invalid department',
+        databaseError: 'Database error',
+      },
+      close: 'Close',
     },
   },
 };

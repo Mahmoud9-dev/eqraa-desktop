@@ -12,6 +12,10 @@ export interface ExportTranslations {
   students: string;
   attendance: string;
   quranProgress: string;
+  importCSV: string;
+  importing: string;
+  importError: string;
+  downloadTemplate: string;
 }
 
 export const exportI18n: Record<Language, ExportTranslations> = {
@@ -27,6 +31,10 @@ export const exportI18n: Record<Language, ExportTranslations> = {
     students: 'الطلاب',
     attendance: 'الحضور والغياب',
     quranProgress: 'تقدم القرآن',
+    importCSV: 'استيراد CSV',
+    importing: 'جاري الاستيراد...',
+    importError: 'حدث خطأ أثناء الاستيراد',
+    downloadTemplate: 'تحميل القالب',
   },
   en: {
     exportPDF: 'Export PDF',
@@ -40,5 +48,9 @@ export const exportI18n: Record<Language, ExportTranslations> = {
     students: 'Students',
     attendance: 'Attendance',
     quranProgress: 'Quran Progress',
+    importCSV: 'Import CSV',
+    importing: 'Importing...',
+    importError: 'An error occurred during import',
+    downloadTemplate: 'Download Template',
   },
 };

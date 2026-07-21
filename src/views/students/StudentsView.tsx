@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, FileUp, Loader2, Upload } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import DepartmentPieChart from "@/components/charts/DepartmentPieChart";
 import { Department } from "@/types";
@@ -24,6 +24,7 @@ import { useStudents } from "./useStudents";
 import { StudentTable } from "./StudentTable";
 import { StudentFormDialog } from "./StudentFormDialog";
 import { StudentDeleteDialog } from "./StudentDeleteDialog";
+import { StudentImportResultDialog } from "./StudentImportResultDialog";
 import { StudentNotesTab } from "./StudentNotesTab";
 import { StudentImagesTab } from "./StudentImagesTab";
 
@@ -54,6 +55,10 @@ const StudentsView = () => {
     selectedStudent,
     editingImageType,
     isExporting,
+    isImporting,
+    importResult,
+    isImportResultOpen,
+    setIsImportResultOpen,
     newStudent,
     setNewStudent,
     getDepartmentName,
@@ -62,6 +67,8 @@ const StudentsView = () => {
     getNoteTypeColor,
     handleExportCSV,
     handleExportPDF,
+    handleDownloadTemplate,
+    handleImportStudents,
     handleAddStudent,
     handleEditStudent,
     handleDeleteStudent,
@@ -159,7 +166,24 @@ const StudentsView = () => {
                 )}
                 {isExporting ? t.export.exporting : t.export.exportPDF}
               </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                <FileUp className="h-4 w-4 me-1" />
+                {t.export.downloadTemplate}
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleImportStudents} disabled={isImporting}>
+                {isImporting ? (
+                  <Loader2 className="h-4 w-4 me-1 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 me-1" />
+                )}
+                {isImporting ? t.export.importing : t.export.importCSV}
+              </Button>
             </div>
+            <StudentImportResultDialog
+              open={isImportResultOpen}
+              onOpenChange={setIsImportResultOpen}
+              summary={importResult}
+            />
             <StudentFormDialog
               mode="add"
               open={isAddDialogOpen}
