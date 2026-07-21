@@ -39,6 +39,8 @@ export interface StudentsTranslations {
     addNewNote: string;
     editProfile: string;
     viewSchedule: string;
+    pin: string;
+    unpin: string;
   };
   form: {
     namePlaceholder: string;
@@ -129,6 +131,9 @@ export interface StudentsTranslations {
     imageEditSuccess: string;
     imageEditSuccessDesc: string;
     imageEditError: string;
+    pinSuccess: string;
+    unpinSuccess: string;
+    pinError: string;
   };
   images: {
     title: string;
@@ -201,6 +206,8 @@ export const students: Record<Language, StudentsTranslations> = {
       addNewNote: 'إضافة ملاحظة جديدة',
       editProfile: 'تعديل الملف الشخصي',
       viewSchedule: 'عرض الجدول',
+      pin: 'تثبيت',
+      unpin: 'إلغاء التثبيت',
     },
     form: {
       namePlaceholder: 'أدخل اسم الطالب',
@@ -291,6 +298,9 @@ export const students: Record<Language, StudentsTranslations> = {
       imageEditSuccess: 'تم التعديل',
       imageEditSuccessDesc: 'تم تعديل السور المحفوظة بنجاح',
       imageEditError: 'حدث خطأ أثناء تعديل السور المحفوظة',
+      pinSuccess: 'تم التثبيت',
+      unpinSuccess: 'تم إلغاء التثبيت',
+      pinError: 'حدث خطأ أثناء تحديث حالة التثبيت',
     },
     images: {
       title: 'الصور المحفوظة للطلاب',
@@ -361,6 +371,8 @@ export const students: Record<Language, StudentsTranslations> = {
       addNewNote: 'Add New Note',
       editProfile: 'Edit Profile',
       viewSchedule: 'View Schedule',
+      pin: 'Pin',
+      unpin: 'Unpin',
     },
     form: {
       namePlaceholder: 'Enter student name',
@@ -451,6 +463,9 @@ export const students: Record<Language, StudentsTranslations> = {
       imageEditSuccess: 'Updated',
       imageEditSuccessDesc: 'Memorized surahs updated successfully',
       imageEditError: 'An error occurred while updating memorized surahs',
+      pinSuccess: 'Pinned',
+      unpinSuccess: 'Unpinned',
+      pinError: 'An error occurred while updating pin status',
     },
     images: {
       title: 'Student Memorized Images',

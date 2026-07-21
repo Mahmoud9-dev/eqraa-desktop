@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { type Student } from "./types";
 import { Department } from "@/types";
+import { Pin, PinOff } from "lucide-react";
 
 interface StudentTableProps {
   filteredStudents: Student[];
@@ -27,6 +28,7 @@ interface StudentTableProps {
   getAttendanceColor: (attendance: number) => string;
   openEditDialog: (student: Student) => void;
   openDeleteDialog: (student: Student) => void;
+  onTogglePin: (student: Student) => void;
   setActiveTab: (tab: string) => void;
 }
 
@@ -36,6 +38,7 @@ export function StudentTable({
   getAttendanceColor,
   openEditDialog,
   openDeleteDialog,
+  onTogglePin,
   setActiveTab,
 }: StudentTableProps) {
   const { t } = useLanguage();
@@ -138,6 +141,23 @@ export function StudentTable({
                   </TableCell>
                   <TableCell className="text-xs sm:text-sm">
                     <div className="flex space-x-1 space-x-reverse">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        aria-label={
+                          student.is_pinned === 1
+                            ? t.students.actions.unpin
+                            : t.students.actions.pin
+                        }
+                        onClick={() => onTogglePin(student)}
+                        className="text-xs px-2 py-1 h-7 sm:h-8 sm:px-3"
+                      >
+                        {student.is_pinned === 1 ? (
+                          <PinOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Pin className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

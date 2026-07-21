@@ -67,6 +67,7 @@ const StudentsView = () => {
     handleDeleteStudent,
     handleEditImages,
     handleDeleteNote,
+    handleTogglePin,
     openEditDialog,
     openDeleteDialog,
     openEditImagesDialog,
@@ -188,6 +189,7 @@ const StudentsView = () => {
               getAttendanceColor={getAttendanceColor}
               openEditDialog={openEditDialog}
               openDeleteDialog={openDeleteDialog}
+              onTogglePin={handleTogglePin}
               setActiveTab={setActiveTab}
             />
           </TabsContent>
