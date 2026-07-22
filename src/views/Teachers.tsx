@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -53,6 +54,8 @@ import { getTeacherWorkload, type TeacherWorkloadRow } from "@/lib/database/repo
 import { logger } from "@/lib/logger";
 
 const Teachers = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState<Department | "all">(
     "all"
@@ -96,6 +99,17 @@ const Teachers = () => {
       .then(setWorkloadData)
       .catch((err: unknown) => logger.error("Failed to fetch teacher workload", err));
   }, [loadTeachers]);
+
+  // Seed the search box when arriving from the global search palette,
+  // then clear the router state so it doesn't reapply on back-navigation.
+  useEffect(() => {
+    const incomingSearchTerm = (location.state as { searchTerm?: string } | null)?.searchTerm;
+    if (incomingSearchTerm) {
+      setSearchTerm(incomingSearchTerm);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Extended teacher data for display
   const teachersExtended = teachers.map((teacher) => ({
