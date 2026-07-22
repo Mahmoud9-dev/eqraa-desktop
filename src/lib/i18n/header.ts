@@ -14,6 +14,11 @@ export interface HeaderTranslations {
   logoutSuccess: string;
   openMenu: string;
   defaultUser: string;
+  openSearch: string;
+  searchPlaceholder: string;
+  searchEmpty: string;
+  searchStudents: string;
+  searchTeachers: string;
 }
 
 export const header: Record<Language, HeaderTranslations> = {
@@ -31,6 +36,11 @@ export const header: Record<Language, HeaderTranslations> = {
     logoutSuccess: 'تم تسجيل الخروج بنجاح',
     openMenu: 'فتح القائمة',
     defaultUser: 'مستخدم',
+    openSearch: 'بحث',
+    searchPlaceholder: 'ابحث عن طالب أو معلم...',
+    searchEmpty: 'لا توجد نتائج',
+    searchStudents: 'الطلاب',
+    searchTeachers: 'المعلمون',
   },
   en: {
     roles: {
@@ -46,5 +56,10 @@ export const header: Record<Language, HeaderTranslations> = {
     logoutSuccess: 'Logged out successfully',
     openMenu: 'Open menu',
     defaultUser: 'User',
+    openSearch: 'Search',
+    searchPlaceholder: 'Search for a student or teacher...',
+    searchEmpty: 'No results found',
+    searchStudents: 'Students',
+    searchTeachers: 'Teachers',
   },
 };
