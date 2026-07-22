@@ -1,9 +1,10 @@
-import { ArrowRight, ArrowLeft, Home, Menu, X } from "lucide-react";
+import { ArrowRight, ArrowLeft, Home, Menu, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PageHeaderProps {
@@ -15,9 +16,22 @@ const PageHeader = ({ title, showBack = true }: PageHeaderProps) => {
   const { t, isRTL } = useLanguage();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
-    <header className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-3 xs:py-4 sm:py-6 md:py-8 shadow-lg relative">
+    <>
+      <header className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-3 xs:py-4 sm:py-6 md:py-8 shadow-lg relative">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
@@ -26,6 +40,15 @@ const PageHeader = ({ title, showBack = true }: PageHeaderProps) => {
           <div className="flex items-center gap-1 xs:gap-2 md:gap-3">
             <LanguageToggle />
             <ThemeToggle />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 xs:p-2.5 touch-target"
+              aria-label={t.header.openSearch}
+            >
+              <Search className="w-5 h-5" />
+            </Button>
             {/* Mobile menu */}
             <div className="md:hidden">
               <Button
@@ -76,7 +99,9 @@ const PageHeader = ({ title, showBack = true }: PageHeaderProps) => {
           </div>
         )}
       </div>
-    </header>
+      </header>
+      <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+    </>
   );
 };
 

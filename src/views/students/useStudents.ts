@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { exportCSV } from "@/lib/export/csv";
@@ -32,6 +33,8 @@ import {
 } from "./types";
 
 export function useStudents() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState<Department | "all">("all");
   const [activeTab, setActiveTab] = useState("all");
@@ -123,6 +126,17 @@ export function useStudents() {
   }, [loadStudents]);
 
   useEffect(() => { loadStudentNotes(); }, [loadStudentNotes]);
+
+  // Seed the search box when arriving from the global search palette,
+  // then clear the router state so it doesn't reapply on back-navigation.
+  useEffect(() => {
+    const incomingSearchTerm = (location.state as { searchTerm?: string } | null)?.searchTerm;
+    if (incomingSearchTerm) {
+      setSearchTerm(incomingSearchTerm);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- Filtering (memoized) ---
   const filteredStudents = useMemo(() =>
