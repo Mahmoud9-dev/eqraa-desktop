@@ -1,4 +1,4 @@
-import { save } from "@tauri-apps/plugin-dialog";
+import { save, open } from "@tauri-apps/plugin-dialog";
 import { downloadDir, join } from "@tauri-apps/api/path";
 
 export async function showSaveDialog(
@@ -13,4 +13,17 @@ export async function showSaveDialog(
     defaultPath,
     filters: [{ name: filterName, extensions }],
   });
+}
+
+export async function showOpenDialog(
+  filterName: string,
+  extensions: string[]
+): Promise<string | null> {
+  const result = await open({
+    title: `Import ${filterName}`,
+    filters: [{ name: filterName, extensions }],
+    multiple: false,
+    directory: false,
+  });
+  return typeof result === "string" ? result : null;
 }
